@@ -28,6 +28,7 @@ export function ChessBoard() {
       to: targetSquare,
       promotion: "r", // Auto promote to queen
     });
+    
 
     if (move === null) return false; // Invalid move
 

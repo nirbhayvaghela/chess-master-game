@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int                @id @default(autoincrement()) // primary key
+  uuid          String             @unique @default(uuid()) // public-facing ID
+  email         String             @unique
+  username      String             @unique
+  password      String
+  streak        Int                @default(0)
+  participation RoomParticipation? // one room max
+  messages      Message[]          @relation("UserMessages")
+  createdAt     DateTime           @default(now())
+}
+
+model GameRoom {
+  id           Int                 @id @default(autoincrement()) // primary key
+  uuid         String              @unique @default(uuid()) // public-facing ID
+  roomName     String?
+  roomCode     String              @unique
+  participants RoomParticipation[] // players & spectators
+  messages     Message[]           @relation("RoomMessages")
+  time         Int?
+  status       GameStatus
+  history      Json
+  createdAt    DateTime            @default(now())
+}
+
+model RoomParticipation {
+  id       Int      @id @default(autoincrement())
+  uuid     String   @unique @default(uuid())
+  user     User     @relation(fields: [userId], references: [id])
+  userId   Int      @unique
+  room     GameRoom @relation(fields: [roomId], references: [id])
+  roomId   Int
+  role     RoomRole
+  joinedAt DateTime @default(now())
+
+  @@unique([userId, roomId])
+}
+
+enum RoomRole {
+  PLAYER
+  SPECTATOR
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  room      GameRoom @relation("RoomMessages",  fields: [roomId], references: [id])
+  roomId    Int
+  sender    User     @relation("UserMessages", fields: [senderId], references: [id])
+  senderId  Int
+  message   String
+  createdAt DateTime @default(now())
+}
+
+enum GameStatus {
+  waiting
+  in_progress
+  win
+  lose
+  draw
+  stalemate
+}

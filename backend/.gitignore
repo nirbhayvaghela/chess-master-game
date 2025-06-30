@@ -1,0 +1,39 @@
+# Node.js dependencies
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Build artifacts
+dist/
+build/
+
+# IDE-specific files (e.g., VS Code)
+.vscode/
+.idea/
+
+# Operating System files
+.DS_Store # macOS
+Thumbs.db # Windows
+
+# npm cache
+.npm/
+
+# Optional ESLint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Test coverage reports
+coverage/
+/src/generated/prisma

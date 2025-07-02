@@ -20,6 +20,8 @@ model User {
   email         String             @unique
   username      String             @unique
   password      String
+  refreshToken  String?            // optional, for JWT refresh
+  accessToken   String?           
   streak        Int                @default(0)
   participation RoomParticipation? // one room max
   messages      Message[]          @relation("UserMessages")
@@ -52,10 +54,6 @@ model RoomParticipation {
   @@unique([userId, roomId])
 }
 
-enum RoomRole {
-  PLAYER
-  SPECTATOR
-}
 
 model Message {
   id        Int      @id @default(autoincrement())
@@ -75,3 +73,11 @@ enum GameStatus {
   draw
   stalemate
 }
+
+enum RoomRole {
+  PLAYER
+  SPECTATOR
+}
+
+// roomname is required
+// rremove history as mendatory

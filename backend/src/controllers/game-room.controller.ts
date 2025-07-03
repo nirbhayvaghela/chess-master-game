@@ -166,7 +166,38 @@ const leaveRoom = asyncHandler(async (req, res) => {
         });
     }
 
-    
+    let updatedRoom;
+    if(room.player1Id === user.id) {
+        // If player1 leaves, set player2 as player1 and update status
+         updatedRoom = await db.gameRoom.update({
+            where: { id: room.id },
+            data: {
+                player1Id: null,
+                player2Id: null,
+                winnerId: room.player2Id,
+                loserId: room.player1Id,
+                status: "completed", // or whatever status you use
+            },
+        });
+
+        // Update user inRoom status
+        await db.user.update({
+            where: { id: user.id },
+            data: {
+                inRoom: false,
+            },
+        });
+
+        return res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            message: "Left room successfully. Player 2 is now Player 1.",
+            data: {
+                room: updatedRoom,
+            },
+        });
+    } else if(room.player2Id === user.id) {
+
+    }
 
 });
 

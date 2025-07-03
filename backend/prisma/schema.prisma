@@ -34,7 +34,7 @@ model User {
 
   // Spectating
   Message    Message[]  @relation("UserMessages")
-  spectatingRoomId    Int?        // 👈 FK
+  spectatingRoomId    Int?      
   spectatingRoom      GameRoom?   @relation("Spectators", fields: [spectatingRoomId], references: [id])
 }
 
@@ -86,6 +86,7 @@ enum GameStatus {
   draw
   stalemate
   playing
+  completed
 }
 
 // enum RoomRole {

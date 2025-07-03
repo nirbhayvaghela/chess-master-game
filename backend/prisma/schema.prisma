@@ -15,49 +15,62 @@ datasource db {
 }
 
 model User {
-  id            Int                @id @default(autoincrement()) // primary key
-  uuid          String             @unique @default(uuid()) // public-facing ID
-  email         String             @unique
-  username      String             @unique
-  password      String
-  refreshToken  String?            // optional, for JWT refresh
-  accessToken   String?           
-  streak        Int                @default(0)
-  participation RoomParticipation? // one room max
-  messages      Message[]          @relation("UserMessages")
-  createdAt     DateTime           @default(now())
+  id           Int      @id @default(autoincrement())
+  uuid         String   @unique @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  password     String
+  streak       Int      @default(0)
+  refreshToken String? // optional, for JWT refresh
+  accessToken  String?
+  createdAt    DateTime @default(now())
+  inRoom      Boolean  @default(false)
+
+  // Game Roles
+  gamesAsPlayer1 GameRoom[] @relation("Player1")
+  gamesAsPlayer2 GameRoom[] @relation("Player2")
+  gamesAsWinner  GameRoom[] @relation("Winner")
+  gamesAsLoser   GameRoom[] @relation("Loser")
+
+  // Spectating
+  Message    Message[]  @relation("UserMessages")
+  spectatingRoomId    Int?        // 👈 FK
+  spectatingRoom      GameRoom?   @relation("Spectators", fields: [spectatingRoomId], references: [id])
 }
 
 model GameRoom {
-  id           Int                 @id @default(autoincrement()) // primary key
-  uuid         String              @unique @default(uuid()) // public-facing ID
-  roomName     String?
-  roomCode     String              @unique
-  participants RoomParticipation[] // players & spectators
-  messages     Message[]           @relation("RoomMessages")
-  time         Int?
-  status       GameStatus
-  history      Json
-  createdAt    DateTime            @default(now())
+  id       Int     @id @default(autoincrement())
+  uuid     String  @unique @default(uuid())
+  roomCode String  @unique
+  roomName String?
+
+  status    GameStatus
+  history   Json
+  time      Int?
+  createdAt DateTime   @default(now())
+
+  // Players
+  player1Id Int? 
+  player2Id Int?
+  player1   User? @relation("Player1", fields: [player1Id], references: [id])
+  player2   User? @relation("Player2", fields: [player2Id], references: [id])
+
+  // Outcome
+  winnerId Int? // null if draw
+  loserId  Int?
+  winner   User? @relation("Winner", fields: [winnerId], references: [id])
+  loser    User? @relation("Loser", fields: [loserId], references: [id])
+
+  // Spectators (Many-to-many)
+  spectators User[] @relation("Spectators")
+
+  // Messages
+  messages Message[] @relation("RoomMessages")
 }
-
-model RoomParticipation {
-  id       Int      @id @default(autoincrement())
-  uuid     String   @unique @default(uuid())
-  user     User     @relation(fields: [userId], references: [id])
-  userId   Int      @unique
-  room     GameRoom @relation(fields: [roomId], references: [id])
-  roomId   Int
-  role     RoomRole
-  joinedAt DateTime @default(now())
-
-  @@unique([userId, roomId])
-}
-
 
 model Message {
   id        Int      @id @default(autoincrement())
-  room      GameRoom @relation("RoomMessages",  fields: [roomId], references: [id])
+  room      GameRoom @relation("RoomMessages", fields: [roomId], references: [id])
   roomId    Int
   sender    User     @relation("UserMessages", fields: [senderId], references: [id])
   senderId  Int
@@ -72,12 +85,10 @@ enum GameStatus {
   lose
   draw
   stalemate
+  playing
 }
 
-enum RoomRole {
-  PLAYER
-  SPECTATOR
-}
-
-// roomname is required
-// rremove history as mendatory
+// enum RoomRole {
+//   PLAYER
+//   SPECTATOR
+// }

@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asynHandler";
 import { db } from "../lib/db";
 import { StatusCodes } from "../utils/constants/http_status_codes";
-import bcrypt from "bcrypt";
+import * as scrypt from "../scrypt";
 import jwt from "jsonwebtoken";
 import { generateAccessToken, generateRefreshToken } from "../utils/helpers/generateTokens";
 
@@ -39,7 +39,7 @@ const signUp = asyncHandler(async (req, res) => {
         });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await scrypt.hash(password);
     // Create new user in db
     const newUser = await db.user.create({
         data: {
@@ -90,7 +90,7 @@ const signIn = asyncHandler(async (req, res) => {
         });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, existingUser.password);
+    const isPasswordValid = await scrypt.compare(password, existingUser.password);
     if (!isPasswordValid) {
         return res.status(StatusCodes.UNAUTHORIZED).json({
             status: StatusCodes.UNAUTHORIZED,
@@ -102,7 +102,7 @@ const signIn = asyncHandler(async (req, res) => {
     const refreshToken = generateRefreshToken(existingUser.id);
 
     // Update db with new tokens
-    await db.user.update({
+    const user = await db.user.update({
         where: { id: existingUser.id },
         data: {
             accessToken: accessToken,
@@ -118,8 +118,7 @@ const signIn = asyncHandler(async (req, res) => {
         .json({
             status: StatusCodes.OK,
             data: {
-                accessToken,
-                refreshToken
+                user
             },
             message: "User signed in successfully"
         });
@@ -146,11 +145,11 @@ const logout = asyncHandler(async (req, res) => {
     });
 
     // Clear cookies
-    return res.status(StatusCodes.NO_CONTENT)
+    return res.status(StatusCodes.OK)
         .cookie("accessToken", "", { httpOnly: true, secure: true, expires: new Date(0) })
         .cookie("refreshToken", "", { httpOnly: true, secure: true, expires: new Date(0) })
         .json({
-            status: StatusCodes.NO_CONTENT,
+            status: StatusCodes.OK,
             message: "User logged out successfully"
         })
 });
@@ -173,7 +172,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     const user = await db.user.findUnique({
         where: { id: decodedToken.id }
     });
-
     if (!user || user.refreshToken !== incomingRefreshToken) {
         return res.status(StatusCodes.UNAUTHORIZED).json({
             status: StatusCodes.UNAUTHORIZED,

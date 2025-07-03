@@ -6,7 +6,7 @@ import { verifyJWT } from "../middlewares/auth.middleware";
 
 const router = Router();
 
-router.route("/signp").post(validateData(signUpSchema), signUp);
+router.route("/signup").post(validateData(signUpSchema), signUp);
 router.route("/signIn").post(validateData(signInSchema), signIn);
 router.route("/logout").post(verifyJWT,logout);
 router.route('/refresh-token').post(verifyJWT, refreshAccessToken); 

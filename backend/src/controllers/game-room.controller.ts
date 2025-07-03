@@ -4,6 +4,7 @@ import { StatusCodes } from "../utils/constants/http_status_codes";
 
 const createRoom = asyncHandler(async (req, res) => {
     const { name, code } = req.body;
+    const user = req.user;
     const isCodeExits = await db.gameRoom.findUnique({
         where: {
             roomCode: code
@@ -16,40 +17,66 @@ const createRoom = asyncHandler(async (req, res) => {
         })
     }
 
-    const room = await db.$transaction(async (tx) => {
-        const gameRoom = await tx.gameRoom.create({
-            data: {
-                roomName: name,
-                roomCode: code,
-                status: "waiting",
-                history: [],
-            },
-        });
-        await tx.roomParticipation.create({
-            data: {
-                role: "PLAYER",
-                roomId: gameRoom.id,
-                userId: req.user.id,
-            },
-        });
-        return gameRoom;
+    const isPlayerInRoom = await db.user.findFirst({
+        where: {
+            id: user.id,
+            inRoom: true
+        }
     });
+    if (isPlayerInRoom) {
+        return res.status(StatusCodes.CONFLICT).json({
+            status: StatusCodes.CONFLICT,
+            message: "You are in a Game room."
+        });
+    }
+
+    const gameRoom = await db.gameRoom.create({
+        data: {
+            roomName: name,
+            roomCode: code,
+            status: "waiting",
+            player1Id: user.id,
+            history: [],
+        },
+    });
+    // await tx.roomParticipation.create({
+    //     data: {
+    //         role: "PLAYER",
+    //         roomId: gameRoom.id,
+    //         userId: req.user.id,
+    //     },
+    // });
 
     res.status(StatusCodes.CREATED).json({
         status: StatusCodes.CREATED,
         message: "Room created successfully.",
         data: {
-            room
+            gameRoom
         }
     });
 });
 
 const joinRoom = asyncHandler(async (req, res) => {
     const { code } = req.body;
-    if(!code) {
+    const user = req.user;
+    if (!code) {
         return res.status(StatusCodes.BAD_REQUEST).json({
             status: StatusCodes.BAD_REQUEST,
             message: "Room code is required."
+        });
+    }
+
+    // Check if user is already in a room
+    const isPlayerInRoom = await db.user.findFirst({
+        where: {
+            id: user.id,
+            inRoom: true
+        }
+    });
+    if (isPlayerInRoom) {
+        return res.status(StatusCodes.CONFLICT).json({
+            status: StatusCodes.CONFLICT,
+            message: "You are already in a game room. Please leave the room first."
         });
     }
 
@@ -58,30 +85,47 @@ const joinRoom = asyncHandler(async (req, res) => {
             roomCode: code
         }
     });
-    if(!room) {
+    if (!room) {
         return res.status(StatusCodes.NOT_FOUND).json({
             status: StatusCodes.NOT_FOUND,
             message: "Room not found."
         });
     }
-    const isUserAlreadyInRoom = await db.roomParticipation.findFirst({
-        where: {
-            roomId: room.id,
-            userId: req.user.id
-        }
-    });
-    if (isUserAlreadyInRoom) {
-        return res.status(StatusCodes.CONFLICT).json({
-            status: StatusCodes.CONFLICT,
-            message: "You are already in this room."
+
+    // Join logic: either as player2 (if empty), or as spectator
+    const isRoomFull = room.player2Id !== null;
+    let updatedRoom;
+    if (!isRoomFull) {
+        updatedRoom = await db.gameRoom.update({
+            where: { id: room.id },
+            data: {
+                player2Id: user.id,
+                status: "in_progress", // or whatever status you use
+            },
+        });
+    } else {
+        // Join as spectator
+        await db.user.update({
+            where: { id: user.id },
+            data: {
+                spectatingRoom: {
+                    connect: { id: room.id },
+                },
+                inRoom: true,
+            },
+        });
+
+        // refetch updated room (optional)
+        updatedRoom = await db.gameRoom.findUnique({
+            where: { id: room.id },
         });
     }
 
-    await db.roomParticipation.create({
+    // Always set inRoom = true
+    await db.user.update({
+        where: { id: user.id },
         data: {
-            role: "PLAYER",
-            roomId: room.id,
-            userId: req.user.id,
+            inRoom: true,
         },
     });
 
@@ -89,9 +133,41 @@ const joinRoom = asyncHandler(async (req, res) => {
         status: StatusCodes.OK,
         message: "Joined room successfully.",
         data: {
-            room
+            room: updatedRoom,
+        },
+    });
+});
+
+
+const leaveRoom = asyncHandler(async (req, res) => {
+    // room id,
+    // !is player sepctaor--> 
+    // is player --> result-win
+    // game room stauts -- completed
+    const user = req.user;
+    const roomId = Number(req.query.roomId);
+
+    if (!roomId) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+            status: StatusCodes.BAD_REQUEST,
+            message: "Room ID is required."
+        });
+    }
+    
+    const room = await db.gameRoom.findUnique({
+        where: {
+            id: roomId
         }
     });
+    if (!room) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+            status: StatusCodes.NOT_FOUND,
+            message: "Room not found."
+        });
+    }
+
+    
+
 });
 
 const getRoomDetails = asyncHandler(async (req, res) => {
@@ -131,4 +207,4 @@ const getRoomDetails = asyncHandler(async (req, res) => {
     });
 });
 
-export { createRoom, joinRoom, getRoomDetails };
+export { createRoom, joinRoom, getRoomDetails, leaveRoom };

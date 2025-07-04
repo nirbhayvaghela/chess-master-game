@@ -140,10 +140,6 @@ const joinRoom = asyncHandler(async (req, res) => {
 
 
 const leaveRoom = asyncHandler(async (req, res) => {
-    // room id,
-    // !is player sepctaor--> 
-    // is player --> result-win
-    // game room stauts -- completed
     const user = req.user;
     const roomId = Number(req.query.roomId);
 
@@ -166,39 +162,72 @@ const leaveRoom = asyncHandler(async (req, res) => {
         });
     }
 
-    let updatedRoom;
-    if(room.player1Id === user.id) {
-        // If player1 leaves, set player2 as player1 and update status
-         updatedRoom = await db.gameRoom.update({
-            where: { id: room.id },
-            data: {
-                player1Id: null,
-                player2Id: null,
-                winnerId: room.player2Id,
-                loserId: room.player1Id,
-                status: "completed", // or whatever status you use
-            },
-        });
-
-        // Update user inRoom status
-        await db.user.update({
-            where: { id: user.id },
-            data: {
-                inRoom: false,
-            },
-        });
-
-        return res.status(StatusCodes.OK).json({
-            status: StatusCodes.OK,
-            message: "Left room successfully. Player 2 is now Player 1.",
-            data: {
-                room: updatedRoom,
-            },
-        });
-    } else if(room.player2Id === user.id) {
-
-    }
-
+    await db.$transaction(async (tx) => {
+        if (room.player1Id === user.id || room.player2Id === user.id) {
+            const winnerId = room.player1Id === user.id ? room.player2Id : room.player1Id;
+            const looserId = room.player1Id === user.id ? room.player1Id : room.player2Id;
+    
+            await tx.user.updateMany({
+                where: {
+                    id: {
+                        in: [room.player1Id!, room.player2Id!],
+                    },
+                },
+                data: {
+                    inRoom: false,
+                },
+            });
+    
+            const updatedRoom = await tx.gameRoom.update({
+                where: { id: room.id },
+                data: {
+                    player1Id: null,
+                    player2Id: null,
+                    winnerId: winnerId,
+                    loserId: looserId,
+                    status: "completed",
+                },
+            });
+    
+            await tx.user.updateMany({
+                where: {
+                    spectatingRoomId: room.id,
+                },
+                data: {
+                    spectatingRoomId: null,
+                }
+            });
+    
+            res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                message: "Left room successfully. Game completed.",
+                data: { room: updatedRoom },
+            });
+        } else {
+            if (user.spectatingRoomId !== room.id) {
+                throw new Error("You are not a participant of this room.");
+            } 
+    
+            await tx.user.update({
+                where: { id: user.id },
+                data: {
+                    spectatingRoomId: null,
+                    inRoom: false,
+                },
+            });
+    
+            res.status(StatusCodes.OK).json({
+                status: StatusCodes.OK,
+                message: "Left room successfully.",
+                data: { room },
+            });
+        }
+    });
+    
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        status: StatusCodes.INTERNAL_SERVER_ERROR,
+        message: "An error occurred while leaving the room."
+    });
 });
 
 const getRoomDetails = asyncHandler(async (req, res) => {
@@ -215,11 +244,8 @@ const getRoomDetails = asyncHandler(async (req, res) => {
             id: roomId
         },
         include: {
-            participants: {
-                include: {
-                    user: true
-                }
-            }
+           spectators: true,
+           messages: true,
         }
     });
     if (!room) {

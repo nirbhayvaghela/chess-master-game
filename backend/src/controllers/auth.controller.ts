@@ -17,7 +17,7 @@ const signUp = asyncHandler(async (req, res) => {
     if (!username || !email || !password) {
         return res.status(StatusCodes.BAD_REQUEST).json({
             status: StatusCodes.BAD_REQUEST,
-            error: "Missing required fields: username, email, or password"
+            message: "Missing required fields: username, email, or password"
         });
     }
 
@@ -35,7 +35,7 @@ const signUp = asyncHandler(async (req, res) => {
     if (existingUser) {
         return res.status(StatusCodes.CONFLICT).json({
             status: StatusCodes.CONFLICT,
-            error: "User with this email or username already exists"
+            message: "User with this email or username already exists"
         });
     }
 
@@ -68,7 +68,7 @@ const signIn = asyncHandler(async (req, res) => {
     if (!username && !email) {
         return res.status(StatusCodes.BAD_REQUEST).json({
             status: StatusCodes.BAD_REQUEST,
-            error: "Either username or email is required"
+            message: "Either username or email is required"
         });
     }
 
@@ -86,7 +86,7 @@ const signIn = asyncHandler(async (req, res) => {
     if (!existingUser) {
         return res.status(StatusCodes.CONFLICT).json({
             status: StatusCodes.CONFLICT,
-            error: "User not exists with this email or username"
+            message: "User not exists with this email or username"
         });
     }
 
@@ -94,7 +94,7 @@ const signIn = asyncHandler(async (req, res) => {
     if (!isPasswordValid) {
         return res.status(StatusCodes.UNAUTHORIZED).json({
             status: StatusCodes.UNAUTHORIZED,
-            error: "Invalid password"
+            message: "Invalid password"
         });
     }
 
@@ -131,7 +131,7 @@ const logout = asyncHandler(async (req, res) => {
     if (!userId) {
         return res.status(StatusCodes.BAD_REQUEST).json({
             status: StatusCodes.BAD_REQUEST,
-            error: "User ID is required for logout"
+            message: "User ID is required for logout"
         });
     }
 
@@ -160,7 +160,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     if (!incomingRefreshToken) {
         res.status(StatusCodes.UNAUTHORIZED).json({
             status: StatusCodes.UNAUTHORIZED,
-            error: "unauthorized request"
+            message: "unauthorized request"
         })
     }
 
@@ -175,7 +175,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     if (!user || user.refreshToken !== incomingRefreshToken) {
         return res.status(StatusCodes.UNAUTHORIZED).json({
             status: StatusCodes.UNAUTHORIZED,
-            error: "Invalid refresh token"
+            message: "Invalid refresh token"
         });
     }
 

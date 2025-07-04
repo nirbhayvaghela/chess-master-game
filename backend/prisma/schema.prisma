@@ -87,6 +87,7 @@ enum GameStatus {
   stalemate
   playing
   completed
+  aborted
 }
 
 // enum RoomRole {

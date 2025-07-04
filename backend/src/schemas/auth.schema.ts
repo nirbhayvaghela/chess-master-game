@@ -6,9 +6,13 @@ const signUpSchema = z.object({
   password: z.string().min(6).max(100),
 });
 
- const signInSchema = z.object({
+const signInSchema = z.object({
   // email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(6).max(100),
 });
 
-export {signInSchema, signUpSchema};
+const logoutSchema = z.object({
+  userId: z.number(),
+});
+
+export { signInSchema, signUpSchema , logoutSchema };

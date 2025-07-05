@@ -20,14 +20,18 @@
   "homepage": "https://github.com/nirbhayvaghela/chess-master-game#readme",
   "dependencies": {
     "@prisma/client": "^6.10.1",
+    "chess.js": "^1.4.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
+    "http": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "nodemon": "^3.1.10",
     "prisma": "^6.10.1",
+    "redis": "^5.5.6",
+    "socket.io": "^4.8.1",
     "zod": "^3.25.67"
   },
   "devDependencies": {

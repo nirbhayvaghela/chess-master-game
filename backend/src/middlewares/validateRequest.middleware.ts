@@ -16,7 +16,7 @@ export function validateData(schema: z.ZodObject<any, any, any>) {
 
       res
         .status(StatusCodes.BAD_REQUEST)
-        .json({ error: "Invalid data", details: errorMessages });
+        .json({ error: "Invalid data", message: errorMessages });
     }
   };
 }

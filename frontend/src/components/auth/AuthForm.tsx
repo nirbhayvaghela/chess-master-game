@@ -1,38 +1,92 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Github } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { SignInSchemaType, SignUpSchemaType } from "@/schemas/auth.schema";
+import { useSignIn, useSignUp } from "@/hooks/queries/useAuth";
+import { toast } from "sonner";
+import cookie from "js-cookie";
 
 export function AuthForm() {
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<"signin" | "signup">("signin");
+  // Form state for sign in
+  const [signInData, setSignInData] = useState({
+    emailOrUsername: "",
+    password: "",
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Form state for sign up
+  const [signUpData, setSignUpData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  // API hooks
+  const signInMutation = useSignIn();
+  const signUpMutation = useSignUp();
+
+  const handleSignInSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    // Simulate loading
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate('/dashboard');
-    }, 1000);
+
+    const signInPayload: SignInSchemaType = {
+      emailOrUsername: signInData.emailOrUsername,
+      password: signInData.password,
+    };
+
+    const result = await signInMutation.mutateAsync(signInPayload);
+    if(result.data.data.user.accessToken) {
+      cookie.set("token",result.data.data.user.accessToken);
+      navigate("/dashboard");
+    }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    console.log(`Login with ${provider}`);
-    navigate('/dashboard');
+  const handleSignUpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Check if passwords match
+    if (signUpData.password !== signUpData.confirmPassword) {
+      console.error("Passwords don't match");
+      return;
+    }
+
+    const signUpPayload: SignUpSchemaType = {
+      username: signUpData.username,
+      email: signUpData.email,
+      password: signUpData.password,
+    };
+
+    const res = await signUpMutation.mutateAsync(signUpPayload);
+    console.log(res,"res")
+    toast.success("Account created successfully, please sign in.");
+    setActiveTab("signin");
   };
+
+  // const handleSocialLogin = (provider: string) => {
+  //   console.log(`Login with ${provider}`);
+  //   navigate("/dashboard");
+  // };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-primary mb-2">ChessMaster</h1>
-          <p className="text-muted-foreground">Strategic chess gaming platform</p>
+          <p className="text-muted-foreground">
+            Strategic chess gaming platform
+          </p>
         </div>
 
         <Card className="border-border">
@@ -43,20 +97,34 @@ export function AuthForm() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
+            <Tabs
+              value={activeTab}
+              onValueChange={(val) => setActiveTab(val as "signin" | "signup")}
+              defaultValue="signin"
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
 
               <TabsContent value="signin" className="space-y-4">
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSignInSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
+                    <Label htmlFor="signin-email-username">
+                      Email or Username
+                    </Label>
                     <Input
-                      id="signin-email"
-                      type="email"
-                      placeholder="Enter your email"
+                      id="signin-email-username"
+                      type="text"
+                      placeholder="Enter your email or username"
+                      value={signInData.emailOrUsername}
+                      onChange={(e) =>
+                        setSignInData((prev) => ({
+                          ...prev,
+                          emailOrUsername: e.target.value,
+                        }))
+                      }
                       required
                     />
                   </div>
@@ -66,23 +134,62 @@ export function AuthForm() {
                       id="signin-password"
                       type="password"
                       placeholder="Enter your password"
+                      value={signInData.password}
+                      onChange={(e) =>
+                        setSignInData((prev) => ({
+                          ...prev,
+                          password: e.target.value,
+                        }))
+                      }
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Signing in..." : "Sign In"}
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={signInMutation.isPending}
+                  >
+                    {signInMutation.isPending ? "Signing in..." : "Sign In"}
                   </Button>
+                  {signInMutation.isError && (
+                    <p className="text-sm text-destructive">
+                      Sign in failed. Please check your credentials.
+                    </p>
+                  )}
                 </form>
               </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSignUpSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-username">Username</Label>
+                    <Input
+                      id="signup-username"
+                      type="text"
+                      placeholder="Choose a username"
+                      value={signUpData.username}
+                      onChange={(e) =>
+                        setSignUpData((prev) => ({
+                          ...prev,
+                          username: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
                     <Input
                       id="signup-email"
                       type="email"
                       placeholder="Enter your email"
+                      value={signUpData.email}
+                      onChange={(e) =>
+                        setSignUpData((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
+                      }
                       required
                     />
                   </div>
@@ -92,6 +199,13 @@ export function AuthForm() {
                       id="signup-password"
                       type="password"
                       placeholder="Create a password"
+                      value={signUpData.password}
+                      onChange={(e) =>
+                        setSignUpData((prev) => ({
+                          ...prev,
+                          password: e.target.value,
+                        }))
+                      }
                       required
                     />
                   </div>
@@ -101,26 +215,51 @@ export function AuthForm() {
                       id="confirm-password"
                       type="password"
                       placeholder="Confirm your password"
+                      value={signUpData.confirmPassword}
+                      onChange={(e) =>
+                        setSignUpData((prev) => ({
+                          ...prev,
+                          confirmPassword: e.target.value,
+                        }))
+                      }
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Creating account..." : "Sign Up"}
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={signUpMutation.isPending}
+                  >
+                    {signUpMutation.isPending
+                      ? "Creating account..."
+                      : "Sign Up"}
                   </Button>
+                  {signUpMutation.isError && (
+                    <p className="text-sm text-destructive">
+                      Sign up failed. Please try again.
+                    </p>
+                  )}
+                  {signUpData.password !== signUpData.confirmPassword &&
+                    signUpData.confirmPassword && (
+                      <p className="text-sm text-destructive">
+                        Passwords don't match.
+                      </p>
+                    )}
                 </form>
               </TabsContent>
             </Tabs>
 
-            <div className="mt-6">
+            {/* <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                  <span className="bg-card px-2 text-muted-foreground">
+                    Or continue with
+                  </span>
                 </div>
               </div>
-
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <Button
                   variant="outline"
@@ -156,7 +295,7 @@ export function AuthForm() {
                   GitHub
                 </Button>
               </div>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
       </div>

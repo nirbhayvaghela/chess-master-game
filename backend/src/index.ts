@@ -10,6 +10,7 @@ import redisClient from "./redis";
 
 import authRouter from "./routes/auth.route";
 import gameRoomRouter from "./routes/game-room.route";
+import { errorHandler } from "./middlewares/errorHandler.middleware";
 
 dotenv.config({
   path: "./.env",
@@ -20,7 +21,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: process.env.CORS_ORIGIN,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   },
 });
@@ -52,6 +53,8 @@ app.use("/api/v1/game-room", gameRoomRouter);
 app.get("/", (req, res) => {
   res.send("Welcome to the Chess Master Game API");
 });
+
+// app.use(errorHandler);
 
 server.listen(process.env.PORT || 8000, () => {
   console.log(`App listening on port ${process.env.PORT || 8000}`);

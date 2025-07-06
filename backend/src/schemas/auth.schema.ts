@@ -7,7 +7,7 @@ const signUpSchema = z.object({
 });
 
 const signInSchema = z.object({
-  // email: z.string().email(),
+  emailOrUsername: z.string(),
   password: z.string().min(6).max(100),
 });
 

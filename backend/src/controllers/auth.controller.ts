@@ -62,10 +62,10 @@ const signUp = asyncHandler(async (req, res) => {
 });
 
 const signIn = asyncHandler(async (req, res) => {
-    const { username, password, email } = req.body;
+    const { emailOrUsername, password } = req.body;
 
     // Validate input
-    if (!username && !email) {
+    if (!emailOrUsername) {
         return res.status(StatusCodes.BAD_REQUEST).json({
             status: StatusCodes.BAD_REQUEST,
             message: "Either username or email is required"
@@ -76,8 +76,8 @@ const signIn = asyncHandler(async (req, res) => {
     const existingUser = await db.user.findFirst({
         where: {
             OR: [
-                { email: email },
-                { username: username }
+                { email: emailOrUsername },
+                { username: emailOrUsername }
             ]
         }
     });

@@ -1,8 +1,8 @@
 // import { RefreshToken } from "./isAuthenticated";
 
 import { toast } from "sonner";
-import { routes } from "../constants/routes";
-import { API } from "../constants/apiUrls";
+import Cookies from "js-cookie";
+import { refreshAccessToken } from "@/services/auth.service";
 
 enum ErrorCode {
   TokenExpired = 410, // Expired token
@@ -12,17 +12,8 @@ enum ErrorCode {
 
 export const errorHandler = async (code: number) => {
   if (code === ErrorCode.TokenExpired || code === ErrorCode.Unauthorized) {
-    // window.location.href = `${import.meta.env.VITE_WEB_URL}/login`;
-    const res = fetch(`${API.refreshToken}`, {
-      method: "POST",
-    });
-    console.log((res));
-    // window.location.href = `${routes.auth.signIn}`;
+    const refreshToken = Cookies.get("refreshToken");
+    await refreshAccessToken({ refreshToken });
     toast.error("Token expired. Please login again.");
-    // localStorage.clear();
-    // await logout();.
   }
- 
 };
-
-

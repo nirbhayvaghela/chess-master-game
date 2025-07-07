@@ -1,5 +1,5 @@
 import { SignInSchemaType, SignUpSchemaType } from "@/schemas/auth.schema";
-import { logOut, refreshToken, signIn, signUp } from "@/services/auth.service";
+import { logOut, signIn, signUp } from "@/services/auth.service";
 import { useMutation } from "@tanstack/react-query";
 
 export const useSignIn = () => {
@@ -35,13 +35,13 @@ export const useLogOut = () => {
   return response;
 };
 
-export const useRefreshToken = () => {
-  const response = useMutation({
-    mutationKey: ["useRefreshToken"],
-    mutationFn: async () => {
-      const res = await refreshToken();
-      return res;
-    },
-  });
-  return response;
-};
+// export const useRefreshToken = () => {
+//   const response = useMutation({
+//     mutationKey: ["useRefreshToken"],
+//     mutationFn: async () => {
+//       const res = await refreshToken();
+//       return res;
+//     },
+//   });
+//   return response;
+// };

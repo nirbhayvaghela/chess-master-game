@@ -14,6 +14,7 @@ import { Copy, Users, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useCreateGameRoom } from "@/hooks/queries/useGameRoom";
+import { routes } from "@/utils/constants/routes";
 
 export function GameRoom() {
   const [gameCode, setGameCode] = useState("ABC123");
@@ -44,7 +45,8 @@ export function GameRoom() {
 
     const response = await createGameRoomMutation.mutateAsync(gameData);
     if (response.data.data.gameRoom.player1Id) {
-      navigate(`/game/${response.code || gameCode}`);
+      // navigate(`/game/${response.code || gameCode}`);
+      navigate(routes.waitingRoom(response.data.data.gameRoom.id));
     }
   };
 

@@ -8,7 +8,7 @@ export function PrivateLayout() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = Cookie.get("token");
+    const token = Cookie.get("accessToken");
     if (!token) {
       navigate(routes.auth.signIn);
     }

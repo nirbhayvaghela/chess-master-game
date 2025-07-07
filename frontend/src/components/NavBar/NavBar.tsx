@@ -32,7 +32,8 @@ export const NavBar = () => {
   };
 
   const handleLogout = () => {
-    cookie.remove("token");
+    cookie.remove("accessToken");
+    cookie.remove("refreshToken")
     navigate(routes.auth.signIn);
   };
 

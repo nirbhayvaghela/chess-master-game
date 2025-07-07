@@ -4,15 +4,16 @@ import Cookies from "js-cookie";
 
 export const apiClient = axios.create({
   baseURL: `${import.meta.env.VITE_BACKEND_URL}/api/v1`,
+  withCredentials: true,
 });
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = Cookies.get("token");
-      
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // const token = Cookies.get("token");
+
+    // if (token) {
+    //   config.headers.Authorization = `Bearer ${token}`;
+    // }
 
     // Prevent caching
     config.headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
@@ -21,5 +22,5 @@ apiClient.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error),
+  (error) => Promise.reject(error)
 );

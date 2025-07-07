@@ -11,6 +11,7 @@ import { PrivateLayout } from "./components/layout/PrivateLayout";
 import { PublicLayout } from "./components/layout/PublicLayout";
 import { routes } from "./utils/constants/routes";
 import Index from "./pages";
+import WaitingRoom from "./components/game/WaitingRoom";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route element={<PrivateLayout />}>
             <Route path={routes.dashboard} element={<Dashboard />} />
             <Route path="/game/:gameId" element={<Game />} />
+            <Route path="/game/waiting/:gameId" element={<WaitingRoom  />} />
           </Route>
 
           {/* Catch-all */}

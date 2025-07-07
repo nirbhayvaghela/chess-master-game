@@ -72,6 +72,10 @@ const getRoomDetails = asyncHandler(async (req, res) => {
     include: {
       spectators: true,
       messages: true,
+      player1: true,
+      player2: true,
+      winner: true,
+      loser: true,
     },
   });
   if (!room) {

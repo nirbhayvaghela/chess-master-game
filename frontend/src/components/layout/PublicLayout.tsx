@@ -7,7 +7,7 @@ export function PublicLayout() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = cookie.get("token");
+    const token = cookie.get("accessToken");
     if (token) {
       navigate(routes.dashboard); // Redirect logged-in users away from public-only routes
     }

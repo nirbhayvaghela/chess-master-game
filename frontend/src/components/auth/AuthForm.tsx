@@ -48,7 +48,6 @@ export function AuthForm() {
 
     const result = await signInMutation.mutateAsync(signInPayload);
     if(result.data.data.user.accessToken) {
-      cookie.set("token",result.data.data.user.accessToken);
       navigate("/dashboard");
     }
   };

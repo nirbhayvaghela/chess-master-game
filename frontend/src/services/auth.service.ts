@@ -16,7 +16,7 @@ export const signIn = async (body: SignInSchemaType) => {
     response = error.response;
     toast.error(
       error?.response?.data?.message ??
-        "Something went wrong. Please try again.",
+        "Something went wrong. Please try again."
     );
     errorHandler(response.data.statusCode);
   }
@@ -34,14 +34,14 @@ export const signUp = async (body: SignUpSchemaType) => {
     response = error.response;
     toast.error(
       error?.response?.data?.message ??
-        "Something went wrong. Please try again.",
+        "Something went wrong. Please try again."
     );
     errorHandler(response.data.statusCode);
   }
   return response;
 };
 
-export const logOut = async (body:any) => {
+export const logOut = async (body: any) => {
   let response;
   try {
     response = await apiClient.post(API.signout, body);
@@ -52,18 +52,19 @@ export const logOut = async (body:any) => {
     response = error.response;
     toast.error(
       error?.response?.data?.message ??
-        "Something went wrong. Please try again.",
+        "Something went wrong. Please try again."
     );
     errorHandler(response.data.statusCode);
   }
   return response;
 };
 
-
-export const refreshToken = async () => {
+export const refreshAccessToken = async (body: { refreshToken: string }) => {
   let response;
   try {
-    response = await apiClient.post(API.refreshToken);
+    response = await apiClient.post(API.refreshToken, body, {
+      withCredentials: true,
+    });
     if (response.status === 200) {
       toast.success(response.data.message);
     }
@@ -71,7 +72,7 @@ export const refreshToken = async () => {
     response = error.response;
     toast.error(
       error?.response?.data?.message ??
-        "Something went wrong. Please try again.",
+        "Something went wrong. Please try again."
     );
     errorHandler(response.data.statusCode);
   }

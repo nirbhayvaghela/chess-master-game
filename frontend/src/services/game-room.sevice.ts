@@ -22,3 +22,18 @@ export const createGameRoom = async (body: CreateGameRoomSchemaType) => {
   }
   return response;
 };
+
+export const getGameRoomDetails = async (id: number) => {
+  let response;
+  try {
+    response = await apiClient.get(API.getGameRoomDetails(id));
+  } catch (error: any) {
+    response = error.response;
+    toast.error(
+      error?.response?.data?.message ??
+        "Something went wrong. Please try again.",
+    );
+    errorHandler(response.data.statusCode);
+  }
+  return response;
+};

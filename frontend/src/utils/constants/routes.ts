@@ -7,5 +7,7 @@ export const routes= {
         signOut: "/logout",
     },
     landingPage: "/",
+    game: (id:number) => `/game/${id}`,
+    waitingRoom: (id:number) => `/game/waiting/${id}`,
     dashboard:"/dashboard",
 }

@@ -3,10 +3,50 @@ import { joinRoomHandler } from "./Handlers/joinRoom.handler";
 import { LeftRoomHandler } from "./Handlers/leftRoom.handler";
 import { removeSpectatorHandler } from "./Handlers/removeSpecator.handler";
 import { moveHandler } from "./Handlers/move.handler";
+import jwt from "jsonwebtoken";
+import { db } from "../lib/db";
+
+interface AuthenticatedSocket extends Socket {
+    userId?: string;
+    user?: any;
+}
 
 const socketHandler = (io: Server) => {
-    io.on('connection', (socket: Socket) => {  console.log(`Connected: ${socket.id}`);
-        
+    io.use(async (socket: AuthenticatedSocket, next) => {
+        try {
+            // Get token from handshake auth or query
+            const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+
+            if (!token) {
+                return next(new Error('Authentication token required'));
+            }
+
+            // Verify JWT token
+            const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+
+            const user = await db.user.findUnique({
+                where: { id: decoded.userId }
+            });
+
+            if (!user) {
+                return next(new Error('User not found'));
+            }
+
+            // Attach user info to socket
+            socket.userId = decoded.userId;
+            socket.user = user;
+
+            next();
+        } catch (error) {
+            next(new Error('Invalid token'));
+        }
+    });
+
+
+    io.on('connection', (socket: AuthenticatedSocket) => {
+        console.log(`Connected: ${socket.id}`);
+
+
         joinRoomHandler(io, socket);
         LeftRoomHandler(io, socket);
         removeSpectatorHandler(io, socket);

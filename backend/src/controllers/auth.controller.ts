@@ -9,7 +9,7 @@ import {
 } from "../utils/helpers/generateTokens";
 
 const options = {
-  httpOnly: false,
+  httpOnly: process.env.NODE_ENV === "production" ? true : false,
   sameSite:
     process.env.NODE_ENV === "production" ? "none" : ("lax" as "lax" | "none"),
   secure: true,
@@ -49,7 +49,7 @@ const signUp = asyncHandler(async (req, res) => {
     data: {
       username,
       email,
-      password: hashedPassword, // Note: In production, you should hash the password before storing
+      password: hashedPassword, 
     },
   });
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,15 +11,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Copy, Users, Clock } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCreateGameRoom } from "@/hooks/queries/useGameRoom";
 import { routes } from "@/utils/constants/routes";
+import socket from "@/lib/socket";
+import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
+import { toast } from "sonner";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
 
 export function GameRoom() {
+  const [searchParams] = useSearchParams();
+  const roomCode = searchParams.get("roomCode");
+  const userData = LocalStorageGetItem("userData");
   const [gameCode, setGameCode] = useState("ABC123");
   const [gameName, setGameName] = useState("");
-  const [joinCode, setJoinCode] = useState("");
+  const [joinCode, setJoinCode] = useState(roomCode || "");
   const navigate = useNavigate();
 
   const createGameRoomMutation = useCreateGameRoom();
@@ -31,8 +37,7 @@ export function GameRoom() {
 
   const copyGameCode = () => {
     navigator.clipboard.writeText(gameCode);
-    toast({
-      title: "Game code copied!",
+    toast("Game code copied!", {
       description: "Share this code with your opponent",
     });
   };
@@ -40,7 +45,7 @@ export function GameRoom() {
   const handleCreateGame = async () => {
     const gameData = {
       code: gameCode,
-      ...(gameName && { name: gameName }), 
+      ...(gameName && { name: gameName }),
     };
 
     const response = await createGameRoomMutation.mutateAsync(gameData);
@@ -53,9 +58,17 @@ export function GameRoom() {
   const handleJoinGame = () => {
     if (!joinCode) return;
 
-    // For now, navigate directly. You can add join game API call here later
-    navigate(`/game/${joinCode}`);
+    socket.emit("join-room", { code: joinCode, userId: userData.id });
   };
+
+  useSocketEvent("joined-room", (res) => {
+    toast.success(`You have joined room as a ${res.role} successfully.`);
+    navigate(
+      res.role === "spectator"
+        ? routes.game(res.room.id)
+        : routes.waitingRoom(res.room.id)
+    );
+  });
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -77,16 +90,41 @@ export function GameRoom() {
               <CardDescription>Set up your chess match</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="create" className="w-full">
+              <Tabs defaultValue="join" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="create">Create Game</TabsTrigger>
                   <TabsTrigger value="join">Join Game</TabsTrigger>
+                  <TabsTrigger value="create">Create Game</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="join" className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="join-code">Game Code</Label>
+                      <Input
+                        id="join-code"
+                        value={joinCode}
+                        onChange={(e) =>
+                          setJoinCode(e.target.value.toUpperCase())
+                        }
+                        placeholder="Enter 6-digit game code"
+                        maxLength={6}
+                      />
+                    </div>
+
+                    <Button
+                      onClick={handleJoinGame}
+                      className="w-full"
+                      disabled={!joinCode}
+                    >
+                      Join Game
+                    </Button>
+                  </div>
+                </TabsContent>
 
                 <TabsContent value="create" className="space-y-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="game-name">Game Name (Optional)</Label>
+                      <Label htmlFor="game-name">Game Name</Label>
                       <Input
                         id="game-name"
                         value={gameName}
@@ -126,31 +164,6 @@ export function GameRoom() {
                       {createGameRoomMutation.isPending
                         ? "Creating Game..."
                         : "Create Game"}
-                    </Button>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="join" className="space-y-4">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="join-code">Game Code</Label>
-                      <Input
-                        id="join-code"
-                        value={joinCode}
-                        onChange={(e) =>
-                          setJoinCode(e.target.value.toUpperCase())
-                        }
-                        placeholder="Enter 6-digit game code"
-                        maxLength={6}
-                      />
-                    </div>
-
-                    <Button
-                      onClick={handleJoinGame}
-                      className="w-full"
-                      disabled={!joinCode}
-                    >
-                      Join Game
                     </Button>
                   </div>
                 </TabsContent>

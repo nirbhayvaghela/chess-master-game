@@ -2,9 +2,9 @@ import { db } from "../../lib/db";
 import { JoinRoomSchemaType } from "../../schemas/game-room.schema";
 
 export const joinRoomHandler = (io: any, socket: any) => {
-  socket.on("join-room", async ({ code, userId, roomId }: JoinRoomSchemaType) => {
+  socket.on("join-room", async ({ code, userId }: JoinRoomSchemaType) => {
       try {
-        if (!code || !userId || !roomId) {
+        if (!code || !userId ) {
           return socket.emit("error", {
             message: "Room code and userId are required.",
           });
@@ -53,7 +53,7 @@ export const joinRoomHandler = (io: any, socket: any) => {
           data: { inRoom: true },
         });
 
-        const socketsInRoom = await io.in(roomId).fetchSockets();
+        const socketsInRoom = await io.in(room.id).fetchSockets();
         if (socketsInRoom.length >= 15) {
           socket.emit("room-full", "Room is full");
           return;
@@ -63,7 +63,7 @@ export const joinRoomHandler = (io: any, socket: any) => {
 
         // Notify others
         socket.to(`room:${room.id}`).emit("user-joined", {
-          userId: user.id,
+          username: user.username,
           role: !room.player2Id ? "player" : "spectator",
         });
 

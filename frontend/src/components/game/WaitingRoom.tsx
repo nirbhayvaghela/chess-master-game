@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +22,9 @@ import { useGetGameRoomDetails } from "@/hooks/queries/useGameRoom";
 import { useNavigate, useParams } from "react-router-dom";
 import Loader from "../ui/loader";
 import { routes } from "@/utils/constants/routes";
+import { toast } from "sonner";
+import socket from "@/lib/socket";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
 // import { useNavigate } from 'react-router-dom';
 // import { toast } from '@/hooks/use-toast';
 
@@ -41,10 +45,10 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
   const navigate = useNavigate();
 
   // Simple toast functionality
-  const showToast = (message: string) => {
-    setToastMessage(message);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
+  // const showToast = (message: string) => {
+  //   setToastMessage(message);
+  //   setTimeout(() => setToastMessage(null), 3000);
+  // };
 
   // Simulate waiting time counter
   useEffect(() => {
@@ -74,14 +78,14 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
 
   const copyGameCode = () => {
     navigator.clipboard.writeText(data?.roomCode);
-    showToast("Game code copied! Share this code with your opponent");
+    toast.success("Game code copied! Share this code with your opponent");
   };
 
   const shareRoom = () => {
     const shareData = {
       title: "Chess Game Invitation",
       text: `Join my chess game! Use code: ${data?.roomCode}`,
-      url: `${window.location.origin}/join/${data?.roomCode}`,
+      url: `${window.location.origin}/dashboard?roomCode=${data?.roomCode}`,
     };
 
     if (navigator.share) {
@@ -90,7 +94,7 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
       navigator.clipboard.writeText(
         `Join my chess game! Use code: ${data?.roomCode} at ${window.location.origin}`
       );
-      showToast("Invitation copied! Share this with your opponent");
+      toast.success("Invitation copied! Share this with your opponent");
     }
   };
 
@@ -100,8 +104,15 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
     console.log("Leaving room...");
   };
 
+  useSocketEvent("user-joined", (res: any) => {
+    if (res.role === "player") {
+      toast.success(`You have joined room as a ${res.role} successfully.`);
+      // navigate(routes.game(res.room.id));
+    }
+  });
+
   if (isLoading) {
-    return <Loader className="w-screen h-screen" size="lg"/>;
+    return <Loader className="w-screen h-screen" size="lg" />;
   }
 
   return (
@@ -120,7 +131,7 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => console.log("Navigate back")}
+              onClick={() => navigate(routes.dashboard)}
               className="hover:bg-secondary"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -129,7 +140,9 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
               <h1 className="text-2xl font-bold text-primary">
                 Waiting for Player
               </h1>
-              <p className="text-muted-foreground">Game Room: {data?.roomCode}</p>
+              <p className="text-muted-foreground">
+                Game Room: {data?.roomCode}
+              </p>
             </div>
           </div>
           <Button
@@ -190,7 +203,7 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
               </div>
 
               {/* Game Settings */}
-              <div className="space-y-3">
+              {/* <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Settings className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium">Game Settings</span>
@@ -201,7 +214,7 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
                   <Badge variant="secondary">Public</Badge>
                   <Badge variant="secondary">Standard</Badge>
                 </div>
-              </div>
+              </div> */}
             </CardContent>
           </Card>
 

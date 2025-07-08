@@ -31,8 +31,9 @@ const App = () => (
           {/* Private routes */}
           <Route element={<PrivateLayout />}>
             <Route path={routes.dashboard} element={<Dashboard />} />
+            <Route path="/dashboard/:roomCode" element={<Dashboard />} />
             <Route path="/game/:gameId" element={<Game />} />
-            <Route path="/game/waiting/:gameId" element={<WaitingRoom  />} />
+            <Route path="/game/waiting/:gameId" element={<WaitingRoom />} />
           </Route>
 
           {/* Catch-all */}

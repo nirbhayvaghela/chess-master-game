@@ -16,6 +16,8 @@ import { SignInSchemaType, SignUpSchemaType } from "@/schemas/auth.schema";
 import { useSignIn, useSignUp } from "@/hooks/queries/useAuth";
 import { toast } from "sonner";
 import cookie from "js-cookie";
+import { routes } from "@/utils/constants/routes";
+import { LocalStorageSetItem } from "@/utils/helpers/storageHelper";
 
 export function AuthForm() {
   const navigate = useNavigate();
@@ -48,7 +50,8 @@ export function AuthForm() {
 
     const result = await signInMutation.mutateAsync(signInPayload);
     if(result.data.data.user.accessToken) {
-      navigate("/dashboard");
+      LocalStorageSetItem("userData", result.data.data.user);
+      navigate(routes.dashboard);
     }
   };
 

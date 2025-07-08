@@ -23,7 +23,9 @@ export function GameRoom() {
   const [searchParams] = useSearchParams();
   const roomCode = searchParams.get("roomCode");
   const userData = LocalStorageGetItem("userData");
-  const [gameCode, setGameCode] = useState("ABC123");
+  const [gameCode, setGameCode] = useState(
+    Math.random().toString(36).substring(2, 8).toUpperCase()
+  );
   const [gameName, setGameName] = useState("");
   const [joinCode, setJoinCode] = useState(roomCode || "");
   const navigate = useNavigate();

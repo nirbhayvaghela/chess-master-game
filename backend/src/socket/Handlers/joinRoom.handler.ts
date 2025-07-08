@@ -1,6 +1,8 @@
 import { db } from "../../lib/db";
 import { SocketResponder } from "../../utils/SocketResponse";
 import { JoinRoomSchemaType } from "../../schemas/game-room.schema";
+import redisClient from "../../redis";
+import { addRoomMemberToRedis } from "../../redis/RoomMembers";
 
 export const joinRoomHandler = (io: any, socket: any) => {
   const responder = new SocketResponder(socket);
@@ -82,8 +84,8 @@ export const joinRoomHandler = (io: any, socket: any) => {
       // Join socket room
       socket.join(`room:${room.id}`);
       socket.data.userId = user.id;
+      await addRoomMemberToRedis(room.id, user.id, role);
 
-      // Notify others someone joined
       SocketResponder.toRoom(io, room.id, "user-joined", {
         user,
         roomStatus: room.status,
@@ -95,7 +97,6 @@ export const joinRoomHandler = (io: any, socket: any) => {
         room: updatedRoom,
         role,
       });
-
     } catch (err: any) {
       console.error("join-room error:", err.message);
       responder.error("error", err.message || "Failed to join room.");

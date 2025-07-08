@@ -2,6 +2,7 @@ import { Server, Socket } from "socket.io";
 import { db } from "../../lib/db";
 import { RemoveSpectatorSchemaType } from "../../schemas/game-room.schema";
 import { SocketResponder } from "../../utils/SocketResponse";
+import { leaveMemberFromRedis } from "../../redis/RoomMembers";
 
 export const removeSpectatorHandler = (io: Server, socket: Socket) => {
   const responder = new SocketResponder(socket);
@@ -45,6 +46,7 @@ export const removeSpectatorHandler = (io: Server, socket: Socket) => {
 
       if (targetSocket) {
         targetSocket.leave(`room:${roomId}`);
+        await leaveMemberFromRedis(roomId, spectatorId);
         const targetResponder = new SocketResponder(targetSocket);
         targetResponder.success("removed-from-room", {
           roomId,

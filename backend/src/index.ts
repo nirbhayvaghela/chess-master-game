@@ -6,10 +6,10 @@ import http from "http";
 import { Server } from "socket.io";
 
 import socketHandler from "./socket";
-import redisClient from "./redis";
 
 import authRouter from "./routes/auth.route";
 import gameRoomRouter from "./routes/game-room.route";
+import { connectRedis } from "./redis";
 
 dotenv.config({
   path: "./.env",
@@ -25,15 +25,11 @@ const io = new Server(server, {
   },
 });
 
+connectRedis().then(() => {
+  console.log("Connected to Redis");
+});
+
 socketHandler(io);
-redisClient
-  .connect()
-  .then(() => {
-    console.log("Connected to Redis");
-  })
-  .catch((err) => {
-    console.error("Failed to connect to Redis:", err);
-  });
 
 app.use(
   cors({

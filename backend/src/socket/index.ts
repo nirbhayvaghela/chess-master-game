@@ -5,6 +5,8 @@ import { removeSpectatorHandler } from "./Handlers/removeSpecator.handler";
 import { moveHandler } from "./Handlers/move.handler";
 import jwt from "jsonwebtoken";
 import { db } from "../lib/db";
+import { chatHandler } from "./Handlers/chat.handler";
+import { validateRoomHandler } from "./Handlers/validate-room";
 
 interface AuthenticatedSocket extends Socket {
     userId?: string;
@@ -46,12 +48,12 @@ const socketHandler = (io: Server) => {
     io.on('connection', (socket: AuthenticatedSocket) => {
         console.log(`Connected: ${socket.id}`);
 
-
+        validateRoomHandler(io, socket);
         joinRoomHandler(io, socket);
         LeftRoomHandler(io, socket);
         removeSpectatorHandler(io, socket);
         moveHandler(io, socket);
-        // chatHandlers(io, socket);
+        chatHandler(io, socket);
         // gameHandlers(io, socket);
 
         socket.on('disconnect', () => {

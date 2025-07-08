@@ -1,4 +1,5 @@
 import { db } from "../../lib/db";
+import { deleteRoomMembersFromRedis, leaveMemberFromRedis } from "../../redis/RoomMembers";
 import { LeftRoomHandlerType } from "../../schemas/game-room.schema";
 import { SocketResponder } from "../../utils/SocketResponse";
 
@@ -38,6 +39,7 @@ export const LeftRoomHandler = (io: any, socket: any) => {
           });
 
           socket.leave(`room:${roomId}`);
+          await deleteRoomMembersFromRedis(roomId);
           responder.success("left-room", { roomStatus: "aborted" });
 
           SocketResponder.toRoom(io, roomId, "user-left", {
@@ -75,6 +77,9 @@ export const LeftRoomHandler = (io: any, socket: any) => {
           });
 
           socket.leave(`room:${roomId}`);
+
+          await deleteRoomMembersFromRedis(roomId);
+
           responder.success("left-room", {
             message: "Game completed",
             roomStatus: "completed",
@@ -99,6 +104,7 @@ export const LeftRoomHandler = (io: any, socket: any) => {
           });
 
           socket.leave(`room:${roomId}`);
+          await leaveMemberFromRedis(roomId, userId);
           responder.success("left-room", { roomStatus: room.status });
 
           SocketResponder.toRoom(io, roomId, "user-left", {

@@ -25,7 +25,7 @@ const loadGame: LoadGame = async function (roomId) {
 const saveGame: SaveGame = async (roomId, game) => {
   try {
     await redisClient.set(`room:${roomId}:fen`, game.fen());
-    await redisClient.rPush(`room:${roomId}:history`, ...game.history());
+    await redisClient.rPush(`room:${roomId}:history`, game.history());
   } catch (error) {
     console.error("Error saving game state to Redis:", error);
     throw new Error("Failed to save game state");

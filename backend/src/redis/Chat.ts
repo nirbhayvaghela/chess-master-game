@@ -2,9 +2,8 @@ import redisClient from ".";
 
 const addMessageToRedis = async (roomId: number, messageData: any) => {
   try {
-    await redisClient.rPush(`room:${roomId}:messages`, JSON.stringify(messageData), {
-      EXP: 2 * 60 * 60 // Set expiration to 2 hours
-    });
+    await redisClient.rPush(`room:${roomId}:messages`, JSON.stringify(messageData));
+    await redisClient.expire(`room:${roomId}:messages`, 2 * 60 * 60); // Set expiration to 2 hours
     await trimRedisMessages(roomId);
   } catch (error) {
     console.error("Error adding message to Redis:", error);

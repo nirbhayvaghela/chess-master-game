@@ -49,9 +49,11 @@ export function GameRoom() {
     };
 
     const response = await createGameRoomMutation.mutateAsync(gameData);
-    if (response.data.data.gameRoom.player1Id) {
+    const room = response.data.data.gameRoom;
+    if (room.player1Id) {
       // navigate(`/game/${response.code || gameCode}`);
-      navigate(routes.waitingRoom(response.data.data.gameRoom.id));
+      socket.emit("join-room", { code: room.roomCode, userId: userData.id });
+      navigate(routes.waitingRoom(room.id));
     }
   };
 

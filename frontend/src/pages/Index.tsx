@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Crown, Users, Trophy, Zap } from "lucide-react";
+import { routes } from "@/utils/constants/routes";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate(routes.auth.signIn)}
                 className="text-lg px-8 py-6"
               >
                 Start Playing
@@ -35,7 +36,7 @@ const Index = () => {
               <Button 
                 variant="outline" 
                 size="lg"
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate(routes.dashboard)}
                 className="text-lg px-8 py-6"
               >
                 Quick Match

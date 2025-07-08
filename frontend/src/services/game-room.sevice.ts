@@ -9,9 +9,9 @@ export const createGameRoom = async (body: CreateGameRoomSchemaType) => {
   let response;
   try {
     response = await apiClient.post(API.createGameRoom, body);
-    if (response.status === 201) {
-      toast.success(response.data.message);
-    }
+    // if (response.status === 201) {
+    //   toast.success(response.data.message);
+    // }
   } catch (error: any) {
     response = error.response;
     toast.error(

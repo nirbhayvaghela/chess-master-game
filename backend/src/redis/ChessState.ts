@@ -32,4 +32,15 @@ const saveGame: SaveGame = async (roomId, game) => {
   }
 };
 
-export { loadGame, saveGame };
+const getGameDetails = async (roomId: string) => {
+  try {
+    const fen = await redisClient.get(`room:${roomId}:fen`);
+    const history = await redisClient.lRange(`room:${roomId}:history`, 0, -1);
+    return { fen, history };
+  } catch (error) {
+    console.error("Error getting game details from Redis:", error);
+    throw new Error("Failed to get game details");
+  }
+}
+
+export { loadGame, saveGame, getGameDetails };

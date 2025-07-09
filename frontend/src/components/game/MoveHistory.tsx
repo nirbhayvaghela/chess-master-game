@@ -2,18 +2,8 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function MoveHistory() {
-  const moves = [
-    { white: 'e4', black: 'e5', number: 1 },
-    { white: 'Nf3', black: 'Nc6', number: 2 },
-    { white: 'Bb5', black: 'a6', number: 3 },
-    { white: 'Ba4', black: 'Nf6', number: 4 },
-    { white: 'O-O', black: 'Be7', number: 5 },
-    { white: 'd3', black: 'b5', number: 6 },
-    { white: 'Bb3', black: 'd6', number: 7 },
-    { white: 'c3', black: 'O-O', number: 8 },
-  ];
-
+export function MoveHistory({ moveHistory }: { moveHistory }) {
+ 
   return (
     <Card className="border-border h-full">
       <CardHeader className="pb-3">
@@ -22,8 +12,8 @@ export function MoveHistory() {
       <CardContent className="p-0">
         <ScrollArea className="h-64 px-4">
           <div className="space-y-1">
-            {moves.map((move, index) => (
-              <div 
+            {moveHistory.map((move, index) => (
+              <div
                 key={index}
                 className="flex items-center gap-2 p-2 rounded hover:bg-accent/50 transition-colors text-sm"
               >

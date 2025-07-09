@@ -1,10 +1,26 @@
-import { useRef, useState } from "react";
+import { SetStateAction, useRef, useState } from "react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
+import socket from "@/lib/socket";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
+import { pieceUnicodeMap } from "@/utils/data";
 
-export function ChessBoard() {
+type SetState<T> = React.Dispatch<React.SetStateAction<T>>;
+
+type CapturedPieces = {
+  black: string[];
+  white: string[];
+};
+interface ChessBoardProp {
+  roomDetails: any;
+  setMoveHistory: SetState<any[]>;
+  setCapturedPiecesList: SetState<CapturedPieces>;
+
+}
+
+export function ChessBoard({ roomDetails, setMoveHistory, setCapturedPiecesList }: ChessBoardProp) {
   const gameRef = useRef(new Chess());
-  const [fen, setFen] = useState(gameRef.current.fen());
+  const [fen, setFen] = useState(roomDetails?.fen || gameRef.current.fen());
   const [status, setStatus] = useState("");
 
   const updateGameStatus = () => {
@@ -23,25 +39,37 @@ export function ChessBoard() {
   const onDrop = (sourceSquare: string, targetSquare: string) => {
     const game = gameRef.current;
 
-    const move = game.move({
+    socket.emit("move", {
       from: sourceSquare,
       to: targetSquare,
-      promotion: "r", // Auto promote to queen
-    });
-    
+      promotion: "r"
+    })
 
-    if (move === null) return false; // Invalid move
-
-    setFen(game.fen()); // Update board
-    updateGameStatus(); // Check if win/draw/stalemate
     return true;
   };
 
-  const resetGame = () => {
-    gameRef.current.reset();
-    setFen(gameRef.current.fen());
-    setStatus("White's turn");
-  };
+  useSocketEvent("receive-move", (res) => {
+    const game = gameRef.current;
+    const capturedPieces: CapturedPieces = {
+      black: [],
+      white: [],
+    }
+
+    for (const move of res.history) {
+      if (move.captured) {
+        if (move.color === 'b') {
+          capturedPieces.white.push(pieceUnicodeMap[move.captured.toUpperCase()] || "?");
+        } else {
+          capturedPieces.black.push(pieceUnicodeMap[move.captured.toLowerCase()] || "?");
+        }
+      }
+    }
+
+    game.move(res.move);
+    setFen(res.fen);
+    setMoveHistory(res.history);
+    setCapturedPiecesList(capturedPieces);
+  });
 
   return (
     <div className="flex flex-col items-center gap-4 p-4 w-[500px]">

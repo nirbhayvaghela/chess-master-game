@@ -8,14 +8,58 @@ import { CapturedPieces } from "./CapturedPieces";
 import { SpectatorList } from "./SpectatorList";
 import { ChatPanel } from "./ChatPanel";
 import { ArrowLeft, Settings, Flag } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { useGetGameRoomDetails } from "@/hooks/queries/useGameRoom";
+import Loader from "../ui/loader";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
+import { toast } from "sonner";
+import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
+import { routes } from "@/utils/constants/routes";
+import { useEffect, useState } from "react";
+import socket from "@/lib/socket";
 
 export function GameScreen() {
   const navigate = useNavigate();
-  const gameId = "ABC123"; // This would come from URL params
+  const { gameId } = useParams();
+  const [moveHistory, setMoveHistory] = useState([]);
+  const [capturedPiecesList, setCapturedPieceList] = useState({
+    white:[],
+    black:[],
+  });
+  const userData = LocalStorageGetItem("userData");
+  const { data, isLoading } = useGetGameRoomDetails(Number(gameId));
+
+  // const gameId = "ABC123"; 
   const currentTurn = "White";
-  const player1 = "Alice Johnson";
-  const player2 = "Bob Smith";
+
+  useSocketEvent("error", (res) => {
+    toast.error(res.message);
+  });
+
+  if (isLoading) {
+    return <Loader className="w-screen h-screen" size="lg" />;
+  }
+
+  const handleLeaveRoom = () => {
+    socket.emit("leave-room", { roomId: Number(gameId), userId: userData?.id })
+  }
+
+  // room-access event
+  useSocketEvent("room-access", (res) => {
+    if (!res.accessStatus) {
+      toast.error(res.message);
+      navigate(routes.dashboard);
+    }
+  })
+
+  useSocketEvent("error", (res) => {
+    toast.error(res.message || "An error occurred.");
+  })
+
+  useEffect(() => {
+    socket.emit("validate-room-access", { roomId: Number(gameId) });
+  }, [])
+
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -23,19 +67,19 @@ export function GameScreen() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
+            {/* <Button
+              variant="outline"
               size="icon"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate(`/dashboard/${data?.roomCode}`)}
             >
               <ArrowLeft className="h-4 w-4" />
-            </Button>
+            </Button> */}
             <div>
               <h1 className="text-2xl font-bold">Game {gameId}</h1>
-              <p className="text-muted-foreground">{player1} vs {player2}</p>
+              <p className="text-muted-foreground">{data?.player1?.username} vs {data?.player2?.username}</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="bg-primary/10 text-primary">
               {currentTurn}'s Turn
@@ -57,7 +101,7 @@ export function GameScreen() {
               <CardContent className="p-6">
                 <div className="flex justify-center">
                   <div className="w-full max-w-2xl">
-                    <ChessBoard />
+                    <ChessBoard roomDetails={data} setCapturedPiecesList={setCapturedPieceList} setMoveHistory={setMoveHistory}/>
                   </div>
                 </div>
               </CardContent>
@@ -65,16 +109,20 @@ export function GameScreen() {
 
             {/* Game Controls */}
             <div className="grid md:grid-cols-2 gap-4">
-              <MoveHistory />
-              <CapturedPieces />
+              <MoveHistory moveHistory={moveHistory}/>
+              <CapturedPieces capturedPiecesList={capturedPiecesList}/>
             </div>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-4">
-            <SpectatorList />
+            <SpectatorList
+              roomDetails={data}
+              roomSpcatators={data?.spectators}
+              isPlayer={userData?.id === data?.player1Id || userData?.id === data?.player2Id}
+            />
             <div className="h-96">
-              <ChatPanel />
+              <ChatPanel gameMessages={data?.messages} roomDetails={data} />
             </div>
           </div>
         </div>
@@ -82,3 +130,5 @@ export function GameScreen() {
     </div>
   );
 }
+
+

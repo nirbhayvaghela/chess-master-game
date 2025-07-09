@@ -10,8 +10,8 @@ import NotFound from "./pages/NotFound";
 import { PrivateLayout } from "./components/layout/PrivateLayout";
 import { PublicLayout } from "./components/layout/PublicLayout";
 import { routes } from "./utils/constants/routes";
-import Index from "./pages";
 import WaitingRoom from "./components/game/WaitingRoom";
+import { LandingPage } from "./pages/landingPage";
 
 const queryClient = new QueryClient();
 
@@ -24,7 +24,7 @@ const App = () => (
         <Routes>
           {/* Public routes */}
           <Route element={<PublicLayout />}>
-            <Route path={routes.landingPage} element={<Index />} />
+            <Route path={routes.landingPage} element={<LandingPage />} />
             <Route path={routes.auth.signIn} element={<Auth />} />
           </Route>
 

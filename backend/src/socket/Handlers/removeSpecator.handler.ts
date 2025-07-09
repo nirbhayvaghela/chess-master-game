@@ -3,8 +3,9 @@ import { db } from "../../lib/db";
 import { RemoveSpectatorSchemaType } from "../../schemas/game-room.schema";
 import { SocketResponder } from "../../utils/SocketResponse";
 import { leaveMemberFromRedis } from "../../redis/RoomMembers";
+import { AuthenticatedSocket } from "..";
 
-export const removeSpectatorHandler = (io: Server, socket: Socket) => {
+export const removeSpectatorHandler = (io: Server, socket: AuthenticatedSocket) => {
   const responder = new SocketResponder(socket);
 
   socket.on("remove-spectator", async ({ roomId, spectatorId, byUserId }: RemoveSpectatorSchemaType) => {
@@ -50,7 +51,7 @@ export const removeSpectatorHandler = (io: Server, socket: Socket) => {
         const targetResponder = new SocketResponder(targetSocket);
         targetResponder.success("removed-from-room", {
           roomId,
-          message: "You have been removed from the room.",
+          message: `You have been removed from the room by ${socket.user.username}`,
         });
       }
 
@@ -62,6 +63,7 @@ export const removeSpectatorHandler = (io: Server, socket: Socket) => {
 
       // Notify others in the room
       SocketResponder.toRoom(io, roomId, "spectator-kicked", {
+        message:`${spectator.username} is kicked off by ${socket.user.username}.`,
         spectatorId,
       });
 

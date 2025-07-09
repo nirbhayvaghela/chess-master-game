@@ -1,7 +1,6 @@
 // socket.on("validate-room-access", async ({ roomId }) => {
 //   const userId = socket.user?.id;
 
-import { fa } from "zod/v4/locales";
 import { isUserInRedisRoom } from "../../redis/RoomMembers";
 import { SocketResponder } from "../../utils/SocketResponse";
 

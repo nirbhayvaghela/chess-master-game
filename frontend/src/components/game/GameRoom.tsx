@@ -18,6 +18,7 @@ import socket from "@/lib/socket";
 import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
 import { toast } from "sonner";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
+import Cookies from "js-cookie";
 
 export function GameRoom() {
   const [searchParams] = useSearchParams();
@@ -52,18 +53,30 @@ export function GameRoom() {
 
     const response = await createGameRoomMutation.mutateAsync(gameData);
     const room = response.data.data.gameRoom;
+
     if (room.player1Id) {
-      // navigate(`/game/${response.code || gameCode}`);
+      if (!socket.connected) {
+        socket.auth.token = Cookies.get("accessToken") || "";
+        socket.connect(); 
+      }
+
       socket.emit("join-room", { code: room.roomCode, userId: userData.id });
       navigate(routes.waitingRoom(room.id));
     }
   };
 
+
   const handleJoinGame = () => {
     if (!joinCode) return;
 
+    if (!socket.connected) {
+      socket.auth.token = Cookies.get("accessToken") || "";
+      socket.connect(); 
+    }
+
     socket.emit("join-room", { code: joinCode, userId: userData.id });
   };
+
 
   useSocketEvent("joined-room", (res) => {
     toast.success(`You have joined room as a ${res.role} successfully.`);
@@ -73,6 +86,14 @@ export function GameRoom() {
         : routes.waitingRoom(res.room.id)
     );
   });
+
+  useSocketEvent("error", (res) => {
+    toast.success(res.message || "An error occurred while joining the room.");
+  });
+
+  useSocketEvent("room-full", (res) => {
+    toast.error(res.message || "This room is full. Please try another one.");
+  })
 
   return (
     <div className="min-h-screen bg-background p-4">

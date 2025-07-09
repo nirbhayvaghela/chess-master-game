@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Crown, Users, Trophy, Zap } from "lucide-react";
 import { routes } from "@/utils/constants/routes";
 
-const Index = () => {
+export const LandingPage = () => {
   const navigate = useNavigate();
 
   return (
@@ -103,7 +103,7 @@ const Index = () => {
           </p>
           <Button 
             size="lg" 
-            onClick={() => navigate('/auth')}
+            onClick={() => navigate(routes.auth.signIn)}
             className="text-lg px-8 py-6"
           >
             Get Started Now
@@ -114,4 +114,3 @@ const Index = () => {
   );
 };
 
-export default Index;

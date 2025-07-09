@@ -1,14 +1,14 @@
 import { Server, Socket } from "socket.io";
 import { joinRoomHandler } from "./Handlers/joinRoom.handler";
-import { LeftRoomHandler } from "./Handlers/leftRoom.handler";
 import { removeSpectatorHandler } from "./Handlers/removeSpecator.handler";
 import { moveHandler } from "./Handlers/move.handler";
 import jwt from "jsonwebtoken";
 import { db } from "../lib/db";
 import { chatHandler } from "./Handlers/chat.handler";
 import { validateRoomHandler } from "./Handlers/validate-room";
+import { LeaveRoomHandler } from "./Handlers/leaveRoom.handler";
 
-interface AuthenticatedSocket extends Socket {
+export interface AuthenticatedSocket extends Socket {
     userId?: string;
     user?: any;
 }
@@ -50,7 +50,7 @@ const socketHandler = (io: Server) => {
 
         validateRoomHandler(io, socket);
         joinRoomHandler(io, socket);
-        LeftRoomHandler(io, socket);
+        LeaveRoomHandler(io, socket);
         removeSpectatorHandler(io, socket);
         moveHandler(io, socket);
         chatHandler(io, socket);

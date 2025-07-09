@@ -3,23 +3,78 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
+import socket from "@/lib/socket";
+import { routes } from "@/utils/constants/routes";
+import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
+import { set } from "date-fns";
 import { X, Eye } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
-export function SpectatorList() {
-  const spectators = [
-    { id: 1, name: "Alice Johnson", avatar: "", isHost: false },
-    { id: 2, name: "Bob Smith", avatar: "", isHost: false },
-    { id: 3, name: "Carol Davis", avatar: "", isHost: false },
-    { id: 4, name: "David Wilson", avatar: "", isHost: false },
-  ];
+interface SpectatorProp {
+  roomDetails: any;
+  roomSpcatators: Array<{
+    id: number;
+    username: string;
+    email: string;
+    inRoom: boolean;
+  }>;
+  isPlayer: boolean;
+}
 
-  const isHost = true; // This would come from props or context
-
+export function SpectatorList({ roomDetails, roomSpcatators, isPlayer }: SpectatorProp) {
+  const [spectators, setSpectators] = useState(roomSpcatators);
+  const navigate = useNavigate();
+  const userData = LocalStorageGetItem("userData");
   const handleRemoveSpectator = (spectatorId: number) => {
-    console.log(`Removing spectator ${spectatorId}`);
+    socket.emit("remove-spectator", { roomId: roomDetails.id, spectatorId, byUserId: userData.id });
   };
 
-  return (
+  // user joied event
+  useSocketEvent("user-joined", (res) => {
+    setSpectators((prev) => [
+      ...prev,
+      {
+        ...res.user,
+      },
+    ]);
+    toast.success(`${res.user.username} has joined the game!`)
+  });
+
+  // remove spectator events
+  // inform to remover
+  useSocketEvent("spectator-removed", (res) => {
+    setSpectators((prev) => prev.filter((specator) => specator.id != res.spectatorId));
+    toast.success(res.message || "Specator removed successfully.");
+  })
+  // inform to spectator, who have been removed
+  useSocketEvent("removed-from-room", (res) => {
+    toast.success(res.message || "you have been removed from room");
+    socket.disconnect();
+    navigate(routes.dashboard);
+  }); 
+  // spectator kicked off 
+  useSocketEvent("spectator-kicked", (res) => {
+    setSpectators((prev) => prev.filter((specator) => specator.id != res.spectatorId));
+    toast.success(res.message || "spectator kicked off by player.")
+  });  
+
+  // left room
+  // inform other user execpt to user who are left
+  useSocketEvent("user-left", (res) => {
+    setSpectators((prev) => prev.filter((specator) => specator.id != res.spectatorId));
+    toast.success(res.message || "user left from room.")
+  })
+  // inform user who is leave 
+  useSocketEvent("left-room", (res) => { 
+    socket.disconnect();
+    toast.success(res.message || "user left successfully.")
+    navigate(routes.dashboard);
+  });
+
+  return ( 
     <Card className="border-border">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
@@ -31,24 +86,24 @@ export function SpectatorList() {
         <ScrollArea className="h-48 px-4">
           <div className="space-y-2">
             {spectators.map((spectator) => (
-              <div 
+              <div
                 key={spectator.id}
                 className="flex items-center gap-3 p-2 rounded hover:bg-accent/50 transition-colors"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={spectator.avatar} />
+                  <AvatarImage src={spectator.username} />
                   <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                    {spectator.name.split(' ').map(n => n[0]).join('')}
+                    {spectator.username.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">
-                    {spectator.name}
+                    {spectator.username}
                   </div>
                 </div>
-                
-                {isHost && (
+
+                {isPlayer && (
                   <Button
                     variant="ghost"
                     size="icon"

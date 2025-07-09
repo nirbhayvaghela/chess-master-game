@@ -25,6 +25,7 @@ import { routes } from "@/utils/constants/routes";
 import { toast } from "sonner";
 import socket from "@/lib/socket";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
+import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
 // import { useNavigate } from 'react-router-dom';
 // import { toast } from '@/hooks/use-toast';
 
@@ -38,17 +39,12 @@ interface WaitingRoomProps {
 
 const WaitingRoom: React.FC<WaitingRoomProps> = () => {
   const { gameId } = useParams();
+  const userData = LocalStorageGetItem("userData");
   const { data, isLoading } = useGetGameRoomDetails(Number(gameId));
   const [waitingTime, setWaitingTime] = useState(0);
   const [isPlayer2Joined, setIsPlayer2Joined] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const navigate = useNavigate();
-
-  // Simple toast functionality
-  // const showToast = (message: string) => {
-  //   setToastMessage(message);
-  //   setTimeout(() => setToastMessage(null), 3000);
-  // };
 
   // Simulate waiting time counter
   useEffect(() => {
@@ -58,17 +54,6 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
 
     return () => clearInterval(timer);
   }, []);
-
-  // Simulate player 2 joining after some time (for demo)
-  // useEffect(() => {
-  //   const joinTimer = setTimeout(() => {
-  //     setIsPlayer2Joined(true);
-  //     showToast("A player has joined your game. Starting match...");
-  //     navigate(routes.game(Number(gameId))); // Navigate to game page
-  //   }, 10000); // Demo: player joins after 10 seconds
-
-  //   return () => clearTimeout(joinTimer);
-  // }, [onGameStart]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -99,18 +84,46 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
   };
 
   const handleLeaveRoom = () => {
-    // onLeaveRoom?.();
-    // navigate('/game-room');
-    console.log("Leaving room...");
+    socket.emit("leave-room", {
+      roomId: Number(gameId),
+      userId: userData.id,
+    })
+
   };
 
-  useSocketEvent("user-joined", (res: any) => {
-    if (res.role === "player") {
-      toast.success(`You have joined room as a ${res.role} successfully.`);
-      // navigate(routes.game(res.room.id));
+  // join Game events
+  useSocketEvent("game-start", (res: any) => {
+    if (res.roomStatus === "in_progress") {
+      toast.success(`Player 2 joined the Game, Game will be start soon!.`);
+      navigate(routes.game(res.room.id));
     }
   });
 
+  // leave room event
+  useSocketEvent("left-room", (res) => {
+    if(res.roomStatus === "aborted") {
+      toast.success(`Game is aborted, ${res.username} left the room.`);
+      socket.disconnect();
+      navigate(routes.dashboard);
+    }
+  });
+
+  // room-access event
+  useSocketEvent("room-access", (res) => {
+    if (!res.accessStatus) {
+      toast.error(res.message);
+      navigate(routes.dashboard);
+    }
+  })
+
+  useSocketEvent("error", (res) => {
+    toast.error(res.message || "An error occurred.");
+  })
+
+  useEffect(() => {
+    socket.emit("validate-room-access", { roomId: Number(gameId) });
+  },[])
+  
   if (isLoading) {
     return <Loader className="w-screen h-screen" size="lg" />;
   }

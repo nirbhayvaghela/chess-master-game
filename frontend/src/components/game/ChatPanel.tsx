@@ -5,57 +5,66 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Smile } from "lucide-react";
+import socket from "@/lib/socket";
+import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
 
-interface Message {
-  id: number;
-  user: string;
-  content: string;
-  timestamp: string;
-  isSystem?: boolean;
-}
+// [
+//   {
+//     id: 1,
+//     user: "System",
+//     content: "Game started! Good luck to both players.",
+//     timestamp: "14:30",
+//     isSystem: true
+//   },
+//   {
+//     id: 2,
+//     user: "Alice",
+//     content: "Good luck! Let's have a great game.",
+//     timestamp: "14:31"
+//   },
+//   {
+//     id: 3,
+//     user: "Bob",
+//     content: "Thanks! May the best player win.",
+//     timestamp: "14:31"
+//   },
+//   {
+//     id: 4,
+//     user: "Charlie",
+//     content: "Nice opening move!",
+//     timestamp: "14:35"
+//   }
+// ]
+// interface Message {
+//   id: number;
+//   user: string;
+//   content: string;
+//   timestamp: string;
+//   isSystem?: boolean;
+// }
 
-export function ChatPanel() {
+export function ChatPanel({ gameMessages, roomDetails }: {
+  gameMessages: any[]
+  roomDetails:any
+}) {
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      user: "System",
-      content: "Game started! Good luck to both players.",
-      timestamp: "14:30",
-      isSystem: true
-    },
-    {
-      id: 2,
-      user: "Alice",
-      content: "Good luck! Let's have a great game.",
-      timestamp: "14:31"
-    },
-    {
-      id: 3,
-      user: "Bob",
-      content: "Thanks! May the best player win.",
-      timestamp: "14:31"
-    },
-    {
-      id: 4,
-      user: "Charlie",
-      content: "Nice opening move!",
-      timestamp: "14:35"
-    }
-  ]);
+  const [messages, setMessages] = useState<any[]>(gameMessages);
+  const userData = LocalStorageGetItem("userData");
 
   const handleSendMessage = () => {
     if (!message.trim()) return;
-    
-    const newMessage: Message = {
-      id: messages.length + 1,
-      user: "You",
-      content: message,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    
-    setMessages([...messages, newMessage]);
-    setMessage("");
+
+    // const newMessage = {
+    //   id: messages.length + 1,
+    //   user: "You",
+    //   content: message,
+    //   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    // };
+
+    socket.emit("send-message", {roomId: roomDetails.id, message: message, senderId: userData.id});
+    // setMessages([...messages, newMessage]);
+    // setMessage("");
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -63,6 +72,12 @@ export function ChatPanel() {
       handleSendMessage();
     }
   };
+
+  useSocketEvent("receive-chat-message", (res) => {
+    setMessages((prev) => [...prev, res]);
+    setMessage("");
+  })
+
 
   return (
     <Card className="border-border h-full flex flex-col">
@@ -73,13 +88,12 @@ export function ChatPanel() {
         <ScrollArea className="flex-1 px-4">
           <div className="space-y-2 pb-4">
             {messages.map((msg) => (
-              <div 
+              <div
                 key={msg.id}
-                className={`p-2 rounded text-sm ${
-                  msg.isSystem 
-                    ? 'bg-primary/10 text-primary text-center italic' 
+                className={`p-2 rounded text-sm ${msg.isSystem
+                    ? 'bg-primary/10 text-primary text-center italic'
                     : 'bg-secondary/50'
-                }`}
+                  }`}
               >
                 {!msg.isSystem && (
                   <div className="flex items-center gap-2 mb-1">
@@ -94,7 +108,7 @@ export function ChatPanel() {
             ))}
           </div>
         </ScrollArea>
-        
+
         <div className="p-4 border-t border-border">
           <div className="flex gap-2">
             <Button
@@ -112,7 +126,7 @@ export function ChatPanel() {
               onKeyPress={handleKeyPress}
               className="flex-1"
             />
-            <Button 
+            <Button
               onClick={handleSendMessage}
               size="icon"
               disabled={!message.trim()}

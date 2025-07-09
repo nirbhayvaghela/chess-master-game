@@ -1,12 +1,18 @@
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import Cookies from "js-cookie";
+
+interface AuthSocket extends Socket {
+  auth: {
+    token: string;
+  };
+}
 
 const socket = io(import.meta.env.VITE_BACKEND_URL, {
   withCredentials: true,
-  auth:{
+  auth: {
     token: Cookies.get("accessToken") || "",
   },
-  // autoConnect: false,
+  autoConnect: false,
 });
 
-export default socket;
+export default socket as AuthSocket;

@@ -50,6 +50,7 @@ export const joinRoomHandler = (io: any, socket: any) => {
 
         // Notify player1 that player2 joined
         SocketResponder.toRoom(io, room.id, "game-start", {
+          roomStatus: updatedRoom.status,
           player2: user,
         });
       }
@@ -103,3 +104,5 @@ export const joinRoomHandler = (io: any, socket: any) => {
     }
   });
 };
+
+

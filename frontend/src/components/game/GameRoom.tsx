@@ -19,6 +19,7 @@ import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
 import { toast } from "sonner";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
 import Cookies from "js-cookie";
+import { stat } from "fs";
 
 export function GameRoom() {
   const [searchParams] = useSearchParams();
@@ -27,6 +28,7 @@ export function GameRoom() {
   const [gameCode, setGameCode] = useState(
     Math.random().toString(36).substring(2, 8).toUpperCase()
   );
+  const [isJoining, setIsJoining] = useState(false);
   const [gameName, setGameName] = useState("");
   const [joinCode, setJoinCode] = useState(roomCode || "");
   const navigate = useNavigate();
@@ -57,7 +59,7 @@ export function GameRoom() {
     if (room.player1Id) {
       if (!socket.connected) {
         socket.auth.token = Cookies.get("accessToken") || "";
-        socket.connect(); 
+        socket.connect();
       }
 
       socket.emit("join-room", { code: room.roomCode, userId: userData.id });
@@ -65,20 +67,20 @@ export function GameRoom() {
     }
   };
 
-
   const handleJoinGame = () => {
     if (!joinCode) return;
 
     if (!socket.connected) {
       socket.auth.token = Cookies.get("accessToken") || "";
-      socket.connect(); 
+      socket.connect();
     }
 
     socket.emit("join-room", { code: joinCode, userId: userData.id });
+    setIsJoining(true);
   };
 
-
   useSocketEvent("joined-room", (res) => {
+    setIsJoining(false);
     toast.success(`You have joined room as a ${res.role} successfully.`);
     navigate(
       res.role === "spectator"
@@ -93,7 +95,7 @@ export function GameRoom() {
 
   useSocketEvent("room-full", (res) => {
     toast.error(res.message || "This room is full. Please try another one.");
-  })
+  });
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -140,6 +142,7 @@ export function GameRoom() {
                       onClick={handleJoinGame}
                       className="w-full"
                       disabled={!joinCode}
+                      isLoading={isJoining}
                     >
                       Join Game
                     </Button>

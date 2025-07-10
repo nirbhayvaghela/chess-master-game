@@ -26,8 +26,8 @@ import { toast } from "sonner";
 import socket from "@/lib/socket";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
 import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
-// import { useNavigate } from 'react-router-dom';
-// import { toast } from '@/hooks/use-toast';
+import { ConfirmDialog } from "../ui-elements/Dialog";
+import { formatTime } from "@/utils/helpers/generalHelpers";
 
 interface WaitingRoomProps {
   gameCode?: string;
@@ -42,24 +42,13 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
   const userData = LocalStorageGetItem("userData");
   const { data, isLoading } = useGetGameRoomDetails(Number(gameId));
   const [waitingTime, setWaitingTime] = useState(0);
-  const [isPlayer2Joined, setIsPlayer2Joined] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
+  // const [isPlayer2Joined, setIsPlayer2Joined] = useState(
+  //   !!data.player2.id || false
+  // );
+  const [gameStartCountdown, setGameStartCountdown] = useState(0);
+  const [isGameStarting, setIsGameStarting] = useState(false);
   const navigate = useNavigate();
-
-  // Simulate waiting time counter
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setWaitingTime((prev) => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
 
   const copyGameCode = () => {
     navigator.clipboard.writeText(data?.roomCode);
@@ -87,25 +76,29 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
     socket.emit("leave-room", {
       roomId: Number(gameId),
       userId: userData.id,
-    })
-
+    });
   };
 
   // join Game events
   useSocketEvent("game-start", (res: any) => {
-    if (res.roomStatus === "in_progress") {
-      toast.success(`Player 2 joined the Game, Game will be start soon!.`);
-      navigate(routes.game(res.room.id));
-    }
+    console.log("Game start event received:", res);
+    // setIsPlayer2Joined(true);
+    setIsGameStarting(true);
+    setGameStartCountdown(15);
+    toast.success(`Player 2 joined the Game! Game starting in 15 seconds...`);
   });
 
   // leave room event
   useSocketEvent("left-room", (res) => {
-    if(res.roomStatus === "aborted") {
-      toast.success(`Game is aborted, ${res.username} left the room.`);
-      socket.disconnect();
-      navigate(routes.dashboard);
-    }
+    toast.success(`Game is ${res.roomStatus}, ${res.username} left the room.`);
+    socket.disconnect();
+    navigate(routes.dashboard);
+  });
+
+  useSocketEvent("user-left", (res) => {
+    toast.success(`Game is ${res.roomStatus}, ${res.username} left the room.`);
+    socket.disconnect();
+    navigate(routes.dashboard);
   });
 
   // room-access event
@@ -114,29 +107,52 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
       toast.error(res.message);
       navigate(routes.dashboard);
     }
-  })
+  });
 
   useSocketEvent("error", (res) => {
     toast.error(res.message || "An error occurred.");
-  })
+  });
 
   useEffect(() => {
     socket.emit("validate-room-access", { roomId: Number(gameId) });
-  },[])
-  
+    console.log(data, "Player 2 ID");
+  }, []);
+
+  // Simulate waiting time counter
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setWaitingTime((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Game start countdown timer
+  useEffect(() => {
+    let countdownTimer: NodeJS.Timeout;
+
+    if (isGameStarting && gameStartCountdown > 0) {
+      countdownTimer = setTimeout(() => {
+        setGameStartCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (isGameStarting && gameStartCountdown === 0) {
+      // Navigate to game room when countdown reaches 0
+      navigate(routes.game(Number(gameId)));
+    }
+
+    return () => {
+      if (countdownTimer) {
+        clearTimeout(countdownTimer);
+      }
+    };
+  }, [isGameStarting, gameStartCountdown, navigate, gameId]);
+
   if (isLoading) {
     return <Loader className="w-screen h-screen" size="lg" />;
   }
 
   return (
     <div className="min-h-screen bg-background p-4">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg animate-in slide-in-from-top">
-          {toastMessage}
-        </div>
-      )}
-
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -151,22 +167,53 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-primary">
-                Waiting for Player
+                {isGameStarting ? "Game Starting Soon!" : "Waiting for Player"}
               </h1>
               <p className="text-muted-foreground">
                 Game Room: {data?.roomCode}
               </p>
             </div>
           </div>
-          <Button
-            variant="destructive"
-            onClick={handleLeaveRoom}
-            className="flex items-center gap-2"
-          >
-            <X className="h-4 w-4" />
-            Leave Room
-          </Button>
+          <ConfirmDialog
+            trigger={
+              <Button
+                variant="destructive"
+                disabled={isGameStarting}
+                className="flex items-center gap-2"
+              >
+                <X className="h-4 w-4" />
+                Leave Room
+              </Button>
+            }
+            title="Leave Room"
+            description="Are you sure you want to leave this room? You will lose your current game progress."
+            confirmText="Leave"
+            cancelText="Cancel"
+            onConfirm={handleLeaveRoom}
+          />
         </div>
+
+        {/* Game Start Countdown Banner */}
+        {isGameStarting && (
+          <Card className="mb-8 border-green-200 bg-green-50">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                  <h2 className="text-xl font-bold text-green-800">
+                    🎉 Both players ready! Game starting in...
+                  </h2>
+                </div>
+                <div className="text-6xl font-bold text-green-600 font-mono">
+                  {gameStartCountdown}
+                </div>
+                <p className="text-green-700">
+                  Get ready for an exciting chess match!
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Game Info Card */}
@@ -188,7 +235,12 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
                   <div className="flex-1 p-3 bg-secondary rounded-lg font-mono text-lg text-center">
                     {data.roomCode}
                   </div>
-                  <Button variant="outline" size="icon" onClick={copyGameCode}>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={copyGameCode}
+                    disabled={isGameStarting}
+                  >
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -199,6 +251,7 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
                 onClick={shareRoom}
                 className="w-full flex items-center gap-2"
                 variant="outline"
+                disabled={isGameStarting}
               >
                 <Share2 className="h-4 w-4" />
                 Share Game Link
@@ -208,26 +261,16 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
               <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Waiting Time</span>
+                  <span className="text-sm">
+                    {isGameStarting ? "Game Starting" : "Waiting Time"}
+                  </span>
                 </div>
                 <span className="font-mono text-lg">
-                  {formatTime(waitingTime)}
+                  {isGameStarting
+                    ? `${gameStartCountdown}s`
+                    : formatTime(waitingTime)}
                 </span>
               </div>
-
-              {/* Game Settings */}
-              {/* <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Settings className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Game Settings</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Badge variant="secondary">10 min</Badge>
-                  <Badge variant="secondary">Rated</Badge>
-                  <Badge variant="secondary">Public</Badge>
-                  <Badge variant="secondary">Standard</Badge>
-                </div>
-              </div> */}
             </CardContent>
           </Card>
 
@@ -236,9 +279,15 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                Players (1/2)
+                Players ({isGameStarting && data?.player2?.id ? "2" : "1"}/2)
               </CardTitle>
-              <CardDescription>Waiting for an opponent to join</CardDescription>
+              <CardDescription>
+                {isGameStarting
+                  ? "Both players ready - game starting!"
+                  : isGameStarting && data?.player2?.id
+                  ? "Player 2 has joined!"
+                  : "Waiting for an opponent to join"}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Player 1 (Creator) */}
@@ -262,50 +311,64 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
 
               {/* Player 2 Slot */}
               <div
-                className={`flex items-center justify-between p-4 rounded-lg border-2 border-dashed transition-all ${
-                  isPlayer2Joined
+                className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
+                  isGameStarting && data?.player2?.id
                     ? "bg-green-50 border-green-200"
-                    : "border-muted-foreground/30"
+                    : "border-dashed border-muted-foreground/30"
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                      isPlayer2Joined
+                      isGameStarting && data?.player2?.id
                         ? "bg-green-500 text-white"
                         : "bg-muted border-2 border-dashed border-muted-foreground/30"
                     }`}
                   >
-                    {isPlayer2Joined ? "?" : "?"}
+                    {isGameStarting && data?.player2?.id ? "✓" : "?"}
                   </div>
                   <div>
                     <div className="font-medium">
-                      {isPlayer2Joined
-                        ? "Player Joined!"
+                      {isGameStarting && data?.player2?.id
+                        ? "Player 2 Joined!"
                         : "Waiting for player..."}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {isPlayer2Joined
-                        ? "Starting game..."
+                      {isGameStarting
+                        ? "Ready to play!"
+                        : isGameStarting && data?.player2?.id
+                        ? "Game will start soon..."
                         : "Share the game code"}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={isPlayer2Joined ? "default" : "secondary"}>
+                  <Badge variant={isGameStarting ? "default" : "secondary"}>
                     Player 2
                   </Badge>
-                  {isPlayer2Joined && (
+                  {isGameStarting && (
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                   )}
                 </div>
               </div>
 
               {/* Status Message */}
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <div className="text-sm text-muted-foreground">
-                  {isPlayer2Joined
-                    ? "🎉 Get ready! The game will start shortly..."
+              <div
+                className={`text-center p-4 rounded-lg ${
+                  isGameStarting
+                    ? "bg-green-50 border border-green-200"
+                    : "bg-muted"
+                }`}
+              >
+                <div
+                  className={`text-sm ${
+                    isGameStarting ? "text-green-700" : "text-muted-foreground"
+                  }`}
+                >
+                  {isGameStarting
+                    ? `🚀 Game starting in ${gameStartCountdown} seconds! Get ready to play!`
+                    : isGameStarting
+                    ? "🎉 Player 2 has joined! Preparing to start the game..."
                     : "🕐 Share the game code with your opponent or send them the link"}
                 </div>
               </div>
@@ -314,35 +377,37 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
         </div>
 
         {/* Instructions */}
-        <Card className="mt-8 border-border">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <h3 className="font-medium">How to invite a player:</h3>
-              <div className="grid md:grid-cols-3 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-xs text-primary-foreground">
-                    1
+        {!isGameStarting && (
+          <Card className="mt-8 border-border">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <h3 className="font-medium">How to invite a player:</h3>
+                <div className="grid md:grid-cols-3 gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-xs text-primary-foreground">
+                      1
+                    </div>
+                    <span>
+                      Copy the game code: <strong>{data.roomCode}</strong>
+                    </span>
                   </div>
-                  <span>
-                    Copy the game code: <strong>{data.roomCode}</strong>
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-xs text-primary-foreground">
-                    2
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-xs text-primary-foreground">
+                      2
+                    </div>
+                    <span>Share it with your opponent</span>
                   </div>
-                  <span>Share it with your opponent</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-xs text-primary-foreground">
-                    3
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center text-xs text-primary-foreground">
+                      3
+                    </div>
+                    <span>Wait for them to join</span>
                   </div>
-                  <span>Wait for them to join</span>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

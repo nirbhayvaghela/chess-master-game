@@ -3,6 +3,7 @@ import { SocketResponder } from "../../utils/SocketResponse";
 import { JoinRoomSchemaType } from "../../schemas/game-room.schema";
 import redisClient from "../../redis";
 import { addRoomMemberToRedis } from "../../redis/RoomMembers";
+import { GameRoom } from "@prisma/client";
 
 export const joinRoomHandler = (io: any, socket: any) => {
   const responder = new SocketResponder(socket);
@@ -16,10 +17,6 @@ export const joinRoomHandler = (io: any, socket: any) => {
       const user = await db.user.findUnique({ where: { id: userId } });
       if (!user) return responder.error("error", "User not found.");
 
-      if (user.inRoom) {
-        return responder.error("error", "Already in a room. Leave first.");
-      }
-
       const room = await db.gameRoom.findUnique({
         where: { roomCode: code },
       });
@@ -27,8 +24,13 @@ export const joinRoomHandler = (io: any, socket: any) => {
         return responder.error("error", "Room not found.");
       }
 
+      // const isUserInRoom = await isUserInRedisRoom(room.id, user.id);
+      // if (isUserInRoom) {
+      //   return responder.error("error", "Already in a room. Leave first.");
+      // }
+
       let role: "player" | "spectator" = "spectator";
-      let updatedRoom;
+      let updatedRoom: GameRoom | null;
 
       // Case 1: Rejoining as creator
       if (room.player1Id === user.id) {
@@ -48,11 +50,11 @@ export const joinRoomHandler = (io: any, socket: any) => {
 
         role = "player";
 
-        // Notify player1 that player2 joined
-        SocketResponder.toRoom(io, room.id, "game-start", {
-          roomStatus: updatedRoom.status,
-          player2: user,
-        });
+        // // Notify player1 that player2 joined
+        // SocketResponder.toRoom(io, room.id, "game-start", {
+        //   roomStatus: updatedRoom.status,
+        //   player2: user,
+        // });
       }
 
       // Case 3: Joining as spectator
@@ -85,7 +87,8 @@ export const joinRoomHandler = (io: any, socket: any) => {
       // Join socket room
       socket.join(`room:${room.id}`);
       socket.data.userId = user.id;
-      await addRoomMemberToRedis(room.id, user.id, role);
+
+      await addRoomMemberToRedis(room.id, user.id);
 
       SocketResponder.toRoom(io, room.id, "user-joined", {
         user,
@@ -93,9 +96,18 @@ export const joinRoomHandler = (io: any, socket: any) => {
         role,
       });
 
+      if (updatedRoom?.status === "in_progress") {
+        // Notify all users in the room that the game has started
+        SocketResponder.toRoom(io, room.id, "game-start", {
+          roomStatus: updatedRoom.status,
+          player2: user,
+        });
+      }
+
       // Confirm to this user
-      responder.success("user-joined", {
+      responder.success("joined-room", {
         room: updatedRoom,
+        username: user.username,
         role,
       });
     } catch (err: any) {
@@ -104,5 +116,3 @@ export const joinRoomHandler = (io: any, socket: any) => {
     }
   });
 };
-
-

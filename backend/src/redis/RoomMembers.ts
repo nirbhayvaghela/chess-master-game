@@ -3,19 +3,18 @@ import redisClient from "./index";
 export const addRoomMemberToRedis = async (
   roomId: number,
   userId: number,
-  role: "player" | "spectator"
 ) => {
   try {
     // Add member to Redis set
     await redisClient.sAdd(
       `room:${roomId}:members`,
-      JSON.stringify({ userId, role })
+      JSON.stringify({ userId })
     );
 
     // Set expiration for the room members set
     await redisClient.expire(`room:${roomId}:members`, 2 * 60 * 60); // 2 hours
 
-    console.log(`User ${userId} added to room ${roomId} as ${role}`);
+    console.log(`User ${userId} added to room ${roomId}`);
   } catch (error) {
     console.error("Error adding room member to Redis:", error);
   }

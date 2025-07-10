@@ -18,16 +18,15 @@ const socketHandler = (io: Server) => {
         try {
             // Get token from handshake auth or query
             const token = socket.handshake.auth?.token || socket.handshake.query?.token;
-
             if (!token) {
                 return next(new Error('Authentication token required'));
             }
 
             // Verify JWT token
-            const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as any;
+            
             const user = await db.user.findUnique({
-                where: { id: decoded.userId }
+                where: { id: decoded.id }
             });
 
             if (!user) {
@@ -35,7 +34,7 @@ const socketHandler = (io: Server) => {
             }
 
             // Attach user info to socket
-            socket.userId = decoded.userId;
+            socket.userId = decoded.id;
             socket.user = user;
 
             next();

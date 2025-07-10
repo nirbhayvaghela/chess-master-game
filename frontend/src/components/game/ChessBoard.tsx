@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { SetStateAction, useRef, useState } from "react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
@@ -15,7 +16,6 @@ interface ChessBoardProp {
   roomDetails: any;
   setMoveHistory: SetState<any[]>;
   setCapturedPiecesList: SetState<CapturedPieces>;
-
 }
 
 export function ChessBoard({ roomDetails, setMoveHistory, setCapturedPiecesList }: ChessBoardProp) {

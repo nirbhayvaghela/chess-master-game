@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,7 +6,7 @@ import { MoveHistory } from "./MoveHistory";
 import { CapturedPieces } from "./CapturedPieces";
 import { SpectatorList } from "./SpectatorList";
 import { ChatPanel } from "./ChatPanel";
-import { ArrowLeft, Settings, Flag } from "lucide-react";
+import { ArrowLeft, Settings, Flag, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetGameRoomDetails } from "@/hooks/queries/useGameRoom";
 import Loader from "../ui/loader";
@@ -17,32 +16,25 @@ import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
 import { routes } from "@/utils/constants/routes";
 import { useEffect, useState } from "react";
 import socket from "@/lib/socket";
+import { ConfirmDialog } from "../ui-elements/Dialog";
 
 export function GameScreen() {
   const navigate = useNavigate();
   const { gameId } = useParams();
   const [moveHistory, setMoveHistory] = useState([]);
   const [capturedPiecesList, setCapturedPieceList] = useState({
-    white:[],
-    black:[],
+    white: [],
+    black: [],
   });
   const userData = LocalStorageGetItem("userData");
   const { data, isLoading } = useGetGameRoomDetails(Number(gameId));
 
-  // const gameId = "ABC123"; 
+  // const gameId = "ABC123";
   const currentTurn = "White";
 
   useSocketEvent("error", (res) => {
     toast.error(res.message);
   });
-
-  if (isLoading) {
-    return <Loader className="w-screen h-screen" size="lg" />;
-  }
-
-  const handleLeaveRoom = () => {
-    socket.emit("leave-room", { roomId: Number(gameId), userId: userData?.id })
-  }
 
   // room-access event
   useSocketEvent("room-access", (res) => {
@@ -50,16 +42,23 @@ export function GameScreen() {
       toast.error(res.message);
       navigate(routes.dashboard);
     }
-  })
+  });
 
   useSocketEvent("error", (res) => {
     toast.error(res.message || "An error occurred.");
-  })
+  });
 
   useEffect(() => {
     socket.emit("validate-room-access", { roomId: Number(gameId) });
-  }, [])
+  }, []);
 
+  if (isLoading) {
+    return <Loader className="w-screen h-screen" size="lg" />;
+  }
+
+  const handleLeaveRoom = () => {
+    socket.emit("leave-room", { roomId: Number(gameId), userId: userData?.id });
+  };
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -76,10 +75,28 @@ export function GameScreen() {
             </Button> */}
             <div>
               <h1 className="text-2xl font-bold">Game {gameId}</h1>
-              <p className="text-muted-foreground">{data?.player1?.username} vs {data?.player2?.username}</p>
+              <p className="text-muted-foreground">
+                {data?.player1?.username} vs {data?.player2?.username}
+              </p>
             </div>
           </div>
 
+          <ConfirmDialog
+            trigger={
+              <Button
+                variant="destructive"
+                className="flex items-center gap-2"
+              >
+                <X className="h-4 w-4" />
+                Leave Room
+              </Button>
+            }
+            title="Leave Room"
+            description="Are you sure you want to leave this room? You will lose your current game progress."
+            confirmText="Leave"
+            cancelText="Cancel"
+            onConfirm={handleLeaveRoom}
+          />
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="bg-primary/10 text-primary">
               {currentTurn}'s Turn
@@ -101,7 +118,11 @@ export function GameScreen() {
               <CardContent className="p-6">
                 <div className="flex justify-center">
                   <div className="w-full max-w-2xl">
-                    <ChessBoard roomDetails={data} setCapturedPiecesList={setCapturedPieceList} setMoveHistory={setMoveHistory}/>
+                    <ChessBoard
+                      roomDetails={data}
+                      setCapturedPiecesList={setCapturedPieceList}
+                      setMoveHistory={setMoveHistory}
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -109,8 +130,8 @@ export function GameScreen() {
 
             {/* Game Controls */}
             <div className="grid md:grid-cols-2 gap-4">
-              <MoveHistory moveHistory={moveHistory}/>
-              <CapturedPieces capturedPiecesList={capturedPiecesList}/>
+              <MoveHistory moveHistory={moveHistory} />
+              <CapturedPieces capturedPiecesList={capturedPiecesList} />
             </div>
           </div>
 
@@ -119,7 +140,10 @@ export function GameScreen() {
             <SpectatorList
               roomDetails={data}
               roomSpcatators={data?.spectators}
-              isPlayer={userData?.id === data?.player1Id || userData?.id === data?.player2Id}
+              isPlayer={
+                userData?.id === data?.player1Id ||
+                userData?.id === data?.player2Id
+              }
             />
             <div className="h-96">
               <ChatPanel gameMessages={data?.messages} roomDetails={data} />
@@ -130,5 +154,3 @@ export function GameScreen() {
     </div>
   );
 }
-
-

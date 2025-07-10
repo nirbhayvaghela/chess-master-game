@@ -15,7 +15,7 @@ export const validateRoomHandler = (io: any, socket: any) => {
     }
 
     const isMember = await isUserInRedisRoom(roomId, userId);
-
+    
     if (isMember) {
       responder.emit("room-access", {
         accessStatus: true,

@@ -1,5 +1,8 @@
 import { db } from "../../lib/db";
-import { deleteRoomMembersFromRedis, leaveMemberFromRedis } from "../../redis/RoomMembers";
+import {
+  deleteRoomMembersFromRedis,
+  leaveMemberFromRedis,
+} from "../../redis/RoomMembers";
 import { LeftRoomHandlerType } from "../../schemas/game-room.schema";
 import { SocketResponder } from "../../utils/SocketResponse";
 
@@ -40,7 +43,10 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
 
           socket.leave(`room:${roomId}`);
           await deleteRoomMembersFromRedis(roomId);
-          responder.success("left-room", { roomStatus: "aborted" });
+          responder.success("left-room", {
+            roomStatus: "aborted",
+            username: user.username,
+          });
 
           SocketResponder.toRoom(io, roomId, "user-left", {
             userId,
@@ -53,15 +59,17 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
 
         // Case 2: Game was playing
         if (room.status === "playing") {
-          const winnerId = room.player1Id === userId ? room.player2Id : room.player1Id;
-          const loserId = room.player1Id === userId ? room.player1Id : room.player2Id;
+          const winnerId =
+            room.player1Id === userId ? room.player2Id : room.player1Id;
+          const loserId =
+            room.player1Id === userId ? room.player1Id : room.player2Id;
 
           await tx.user.updateMany({
             where: { id: { in: [room.player1Id!, room.player2Id!] } },
             data: { inRoom: false },
           });
 
-          await tx.gameRoom.update({
+          const updatedRoom = await tx.gameRoom.update({
             where: { id: room.id },
             data: {
               player1Id: null,
@@ -82,13 +90,14 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
           await deleteRoomMembersFromRedis(roomId);
 
           responder.success("left-room", {
-            message: "Game completed",
-            roomStatus: "completed",
+            roomStatus: updatedRoom.status,
+            username: user.username,
           });
 
           SocketResponder.toRoom(io, roomId, "user-left", {
             userId,
-            reason: "completed",
+            username: user.username,
+            roomStatus: "aborted",
           });
 
           return;
@@ -106,12 +115,15 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
 
           socket.leave(`room:${roomId}`);
           await leaveMemberFromRedis(roomId, userId);
-          responder.success("left-room", { roomStatus: room.status, message: "you are left the room" });
+          responder.success("left-room", {
+            roomStatus: room.status,
+            message: "you are left the room",
+          });
 
           SocketResponder.toRoom(io, roomId, "user-left", {
             userId,
-            reason: "spectator",
-            message: `${user.username} is left from Game room.`
+            roomStatus: "spectator",
+            message: `${user.username} is left from Game room.`,
           });
 
           return;
@@ -125,8 +137,6 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
     }
   });
 };
-
-
 
 // error
 // left-room

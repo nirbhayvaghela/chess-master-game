@@ -5,6 +5,9 @@ import { Chessboard } from "react-chessboard";
 import socket from "@/lib/socket";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
 import { pieceUnicodeMap } from "@/utils/data";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { routes } from "@/utils/constants/routes";
 
 type SetState<T> = React.Dispatch<React.SetStateAction<T>>;
 
@@ -20,6 +23,7 @@ interface ChessBoardProp {
 
 export function ChessBoard({ roomDetails, setMoveHistory, setCapturedPiecesList }: ChessBoardProp) {
   const gameRef = useRef(new Chess());
+  const navigate = useNavigate();
   const [fen, setFen] = useState(roomDetails?.fen || gameRef.current.fen());
   const [status, setStatus] = useState("");
 
@@ -47,6 +51,23 @@ export function ChessBoard({ roomDetails, setMoveHistory, setCapturedPiecesList 
 
     return true;
   };
+
+  useSocketEvent("user-joined", (res) => {
+    console.log(res,"user joiend in game room")
+  })
+
+  useSocketEvent("left-room", (res) => {
+    toast.success(`You have left the room successfully. Game is ${res.roomStatus}.`);
+    navigate(routes.dashboard);
+  });
+
+  useSocketEvent("user-left", (res) => {
+    toast.success(`${res.username} has left the room. Game is ${res.roomStatus}.`);
+    if (res.roomStatus === "aborted") {
+      navigate(routes.dashboard);
+    }
+    // Implement logic to habdle win/loss dialog
+  })
 
   useSocketEvent("receive-move", (res) => {
     const game = gameRef.current;

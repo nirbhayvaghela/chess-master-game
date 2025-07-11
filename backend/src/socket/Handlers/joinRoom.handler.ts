@@ -90,9 +90,10 @@ export const joinRoomHandler = (io: any, socket: any) => {
 
       await addRoomMemberToRedis(room.id, user.id);
 
-      SocketResponder.toRoom(io, room.id, "user-joined", {
-        user,
-        roomStatus: room.status,
+      // Confirm to this user
+      responder.success("joined-room", {
+        room: updatedRoom,
+        username: user.username,
         role,
       });
 
@@ -104,10 +105,9 @@ export const joinRoomHandler = (io: any, socket: any) => {
         });
       }
 
-      // Confirm to this user
-      responder.success("joined-room", {
-        room: updatedRoom,
-        username: user.username,
+      SocketResponder.toRoom(io, room.id, "user-joined", {
+        user,
+        roomStatus: room.status,
         role,
       });
     } catch (err: any) {
@@ -116,3 +116,10 @@ export const joinRoomHandler = (io: any, socket: any) => {
     }
   });
 };
+
+// --------------->
+// Game room flow:
+// creator -> user-joiend --> redirect to waiting room
+// player2 --> userjoined --> game-started --> redirect and start own coundown
+//         ---> game-staa
+

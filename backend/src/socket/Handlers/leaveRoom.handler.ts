@@ -51,6 +51,8 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
           SocketResponder.toRoom(io, roomId, "user-left", {
             userId,
             username: user.username,
+            isRoomCreatorLeft: room.player1Id === userId,
+            isPlayerLeft: room.player2Id === userId || room.player1Id === userId,
             roomStatus: "aborted",
           });
 

@@ -63,7 +63,6 @@ export function GameRoom() {
       }
 
       socket.emit("join-room", { code: room.roomCode, userId: userData.id });
-      navigate(routes.waitingRoom(room.id));
     }
   };
 
@@ -80,6 +79,7 @@ export function GameRoom() {
   };
 
   useSocketEvent("joined-room", (res) => {
+    console.log(res,"user-joiend redirect him");
     setIsJoining(false);
     toast.success(`You have joined room as a ${res.role} successfully.`);
     navigate(

@@ -1,9 +1,8 @@
-
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function MoveHistory({ moveHistory }: { moveHistory }) {
- 
+  console.log(moveHistory, "move history in move history component");
   return (
     <Card className="border-border h-full">
       <CardHeader className="pb-3">

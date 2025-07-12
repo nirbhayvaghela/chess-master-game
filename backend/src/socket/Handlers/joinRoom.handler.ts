@@ -33,11 +33,10 @@ export const joinRoomHandler = (io: any, socket: any) => {
       let updatedRoom: GameRoom | null;
 
       // Case 1: Rejoining as creator
-      if (room.player1Id === user.id) {
+      if (room.player1Id === user.id || room.player2Id === user.id) {
         role = "player";
         updatedRoom = room;
       }
-
       // Case 2: Joining as player 2
       else if (!room.player2Id) {
         updatedRoom = await db.gameRoom.update({
@@ -72,11 +71,11 @@ export const joinRoomHandler = (io: any, socket: any) => {
         });
       }
 
-      // Update user as inRoom
-      await db.user.update({
-        where: { id: user.id },
-        data: { inRoom: true },
-      });
+      // // Update user as inRoom
+      // await db.user.update({
+      //   where: { id: user.id },
+      //   data: { inRoom: true },
+      // });
 
       // Check for max socket connections
       const socketsInRoom = await io.in(`room:${room.id}`).fetchSockets();
@@ -122,4 +121,3 @@ export const joinRoomHandler = (io: any, socket: any) => {
 // creator -> user-joiend --> redirect to waiting room
 // player2 --> userjoined --> game-started --> redirect and start own coundown
 //         ---> game-staa
-

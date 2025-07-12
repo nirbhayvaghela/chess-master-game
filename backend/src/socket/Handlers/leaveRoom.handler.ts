@@ -43,6 +43,7 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
 
           socket.leave(`room:${roomId}`);
           await deleteRoomMembersFromRedis(roomId);
+
           responder.success("left-room", {
             roomStatus: "aborted",
             username: user.username,
@@ -99,7 +100,8 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
           SocketResponder.toRoom(io, roomId, "user-left", {
             userId,
             username: user.username,
-            roomStatus: "aborted",
+            roomStatus: room.status,
+            isPlayerLeft: true,
           });
 
           return;
@@ -126,6 +128,7 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
             userId,
             roomStatus: "spectator",
             message: `${user.username} is left from Game room.`,
+            isPlayerLeft: false,
           });
 
           return;

@@ -41,7 +41,9 @@ export function SpectatorList({ roomDetails, roomSpcatators, isPlayer }: Spectat
         ...res.user,
       },
     ]);
-    toast.success(`${res.user.username} has joined the game!`)
+    if(userData.id !== res.user.id) {
+      toast.success(`${res.user.username} has joined the game!`)
+    }
   });
 
   // remove spectator events

@@ -1,5 +1,5 @@
 // utils/chessState.js
-import { Chess } from "chess.js";
+import { Chess, Move } from "chess.js";
 import redisClient from ".";
 
 interface LoadGame {
@@ -7,7 +7,7 @@ interface LoadGame {
 }
 
 interface SaveGame {
-  (roomId: string, game: Chess): Promise<void>;
+  (roomId: string, game: Chess, move: Move): Promise<void>;
 }
 
 const loadGame: LoadGame = async function (roomId) {
@@ -22,10 +22,10 @@ const loadGame: LoadGame = async function (roomId) {
   }
 };
 
-const saveGame: SaveGame = async (roomId, game) => {
+const saveGame: SaveGame = async (roomId, game, move) => {
   try {
     await redisClient.set(`room:${roomId}:fen`, game.fen());
-    await redisClient.rPush(`room:${roomId}:history`, game.history());
+    await redisClient.rPush(`room:${roomId}:history`, JSON.stringify(move));
   } catch (error) {
     console.error("Error saving game state to Redis:", error);
     throw new Error("Failed to save game state");
@@ -41,6 +41,6 @@ const getGameDetails = async (roomId: string) => {
     console.error("Error getting game details from Redis:", error);
     throw new Error("Failed to get game details");
   }
-}
+};
 
 export { loadGame, saveGame, getGameDetails };

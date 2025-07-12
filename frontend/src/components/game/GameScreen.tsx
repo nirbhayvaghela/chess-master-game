@@ -17,20 +17,27 @@ import { routes } from "@/utils/constants/routes";
 import { useEffect, useState } from "react";
 import socket from "@/lib/socket";
 import { ConfirmDialog } from "../ui-elements/Dialog";
+import { useChessGameStore } from "@/store";
 
 export function GameScreen() {
   const navigate = useNavigate();
   const { gameId } = useParams();
   const [isOpenConfirmDialog, setIsOpenConfirmDialog] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
-  const [moveHistory, setMoveHistory] = useState([]);
-  const [capturedPiecesList, setCapturedPieceList] = useState({
-    white: [],
-    black: [],
-  });
+  const {
+    setFen,
+    capturedPieces,
+    addMove,
+    setMoveHistory,
+    updateCapturedPiecesToStore,
+    setCapturedPieces,
+  } = useChessGameStore();
+  // const [moveHistory, setMoveHistory] = useState([]);
+  // const [capturedPiecesList, setCapturedPieceList] = useState({
+  //   white: [],
+  //   black: [],
+  // });
   const [gameStatus, setGameStatus] = useState("waiting"); // waiting, playing, completed, draw
-  const [currentTurn, setCurrentTurn] = useState("White");
-
   const userData = LocalStorageGetItem("userData");
   const { data, isLoading } = useGetGameRoomDetails(Number(gameId));
 
@@ -57,12 +64,12 @@ export function GameScreen() {
             Waiting for Players
           </Badge>
         );
-      case "playing":
-        return (
-          <Badge variant="secondary" className="bg-green-500/10 text-green-600">
-            {currentTurn}'s Turn
-          </Badge>
-        );
+      // case "playing":
+      //   return (
+      //     <Badge variant="secondary" className="bg-green-500/10 text-green-600">
+      //       {currentTurn}'s Turn
+      //     </Badge>
+      //   );
       case "completed":
         return (
           <Badge variant="secondary" className="bg-blue-500/10 text-blue-600">
@@ -116,36 +123,6 @@ export function GameScreen() {
     // Implement logic to handle win/loss dialog
   });
 
-  // useSocketEvent("game-ended", (res) => {
-  //   setGameStatus(res.status);
-  //   if (res.status === "completed") {
-  //     const winnerName =
-  //       res.winnerId === data?.player1Id
-  //         ? data?.player1?.username
-  //         : data?.player2?.username;
-  //     toast.success(`Game completed! ${winnerName} wins!`);
-  //   } else if (res.status === "draw") {
-  //     toast.info("Game ended in a draw!");
-  //   }
-  // });
-
-  // useSocketEvent("receive-move", (res) => {
-  //   // Update turn status
-  //   if (res.history && res.history.length > 0) {
-  //     const lastMove = res.history[res.history.length - 1];
-  //     setCurrentTurn(lastMove.color === "w" ? "Black" : "White");
-  //   }
-
-  //   // Update game status if provided
-  //   if (res.status) {
-  //     setGameStatus(res.status);
-  //   }
-  // });
-
-  useSocketEvent("user-joined", (res) => {
-    console.log(res, "user joined in game room");
-  });
-
   useEffect(() => {
     socket.emit("validate-room-access", { roomId: Number(gameId) });
 
@@ -155,7 +132,50 @@ export function GameScreen() {
     }
   }, [gameId, data?.status]);
 
+  useEffect(() => {
+    if (data?.history.length === 0) {
+      setMoveHistory([]);
+      setCapturedPieces({ white: [], black: [] });
+    }
 
+    const blackCaptures = [];
+    const whiteCaptures = [];
+
+    for (const moveString of data?.history || []) {
+      const move = JSON.parse(moveString);
+      addMove(move);
+      if (move.captured) {
+        console.log(move.color === "b")
+        if (move.color === "b") {
+          // Black captured a white piece
+          blackCaptures.push(move);
+        } else {
+          // White captured a black piece
+          whiteCaptures.push(move);
+        }
+      }
+    }
+    setCapturedPieces({
+      white: whiteCaptures,
+      black: blackCaptures,
+    });
+
+    if (!socket.connected) {
+      socket.connect();
+      if (data?.roomCode && userData?.id) {
+        socket.emit("join-room", {
+          code: data.roomCode,
+          userId: userData.id,
+        });
+      }
+    }
+
+    return () => {
+      if (socket.connected) {
+        socket.disconnect();
+      }
+    };
+  }, [data]);
 
   if (isLoading) {
     return <Loader className="w-screen h-screen" size="lg" />;
@@ -219,8 +239,6 @@ export function GameScreen() {
                     <div className="w-full max-w-2xl">
                       <ChessBoard
                         roomDetails={data}
-                        setCapturedPiecesList={setCapturedPieceList}
-                        setMoveHistory={setMoveHistory}
                         currentUserId={userData?.id}
                       />
                     </div>
@@ -230,8 +248,8 @@ export function GameScreen() {
 
               {/* Game Controls */}
               <div className="grid md:grid-cols-2 gap-4">
-                <MoveHistory moveHistory={moveHistory} />
-                <CapturedPieces capturedPiecesList={capturedPiecesList} />
+                <MoveHistory />
+                <CapturedPieces />
               </div>
             </div>
 

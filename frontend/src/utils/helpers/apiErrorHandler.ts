@@ -18,8 +18,8 @@ export const errorHandler = async (code: number) => {
     if(res.status === ErrorCode.Unauthorized) {
       Cookies.remove("accessToken");
       Cookies.remove("refreshToken");
+      toast.error("Token expired. Please login again.");
       window.location.href = routes.auth.signIn; 
     }
-    toast.error("Token expired. Please login again.");
   }
 };

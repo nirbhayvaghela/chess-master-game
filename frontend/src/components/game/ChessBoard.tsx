@@ -9,6 +9,9 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { routes } from "@/utils/constants/routes";
 import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
+import { useGameHandlers } from "@/hooks/useGameHandlers";
+import { useChessGameStore } from "@/store";
+import { add, set } from "date-fns";
 
 type SetState<T> = React.Dispatch<React.SetStateAction<T>>;
 
@@ -19,77 +22,26 @@ type CapturedPieces = {
 
 interface ChessBoardProp {
   roomDetails: any;
-  setMoveHistory: SetState<any[]>;
-  setCapturedPiecesList: SetState<CapturedPieces>;
-  currentUserId?: number; // Add current user ID
+  currentUserId?: number;
 }
 
-export function ChessBoard({
-  roomDetails,
-  setMoveHistory,
-  setCapturedPiecesList,
-  currentUserId,
-}: ChessBoardProp) {
+export function ChessBoard({ roomDetails, currentUserId }: ChessBoardProp) {
   const gameRef = useRef(new Chess());
   const userData = LocalStorageGetItem("userData");
-  const navigate = useNavigate();
-  const [fen, setFen] = useState(roomDetails?.fen || gameRef.current.fen());
-  const [status, setStatus] = useState("");
-
-  // Determine player color and board orientation
+  const { fen, setFen, moveHistory, addMove } = useChessGameStore();
   const isPlayer1 = currentUserId === roomDetails?.player1Id;
   const isPlayer2 = currentUserId === roomDetails?.player2Id;
   const playerColor = isPlayer1 ? "white" : isPlayer2 ? "black" : "white";
   const boardOrientation = playerColor === "white" ? "white" : "black";
 
-  // Check if it's current player's turn
-  const isMyTurn = () => {
-    const currentTurn = gameRef.current.turn(); // 'w' or 'b'
-    return (
-      (currentTurn === "w" && isPlayer1) || (currentTurn === "b" && isPlayer2)
-    );
-  };
-
-  const updateGameStatus = () => {
-    const game = gameRef.current;
-    if (game.isCheckmate()) {
-      const winner = game.turn() === "w" ? "Black" : "White";
-      setStatus(`Checkmate! ${winner} wins.`);
-    } else if (game.isDraw()) {
-      setStatus("Draw!");
-    } else if (game.isStalemate()) {
-      setStatus("Stalemate!");
-    } else {
-      const currentPlayer = game.turn() === "w" ? "White" : "Black";
-      const turnStatus = isMyTurn() ? "Your turn" : `${currentPlayer}'s turn`;
-      setStatus(turnStatus);
-    }
-  };
-
-  const updateCapturedPieces = (history: any[]) => {
-    const capturedPieces: CapturedPieces = {
-      black: [],
-      white: [],
-    };
-
-    for (const move of history) {
-      if (move.captured) {
-        if (move.color === "b") {
-          // Black captured a white piece
-          capturedPieces.white.push(
-            pieceUnicodeMap[move.captured.toUpperCase()] || "?"
-          );
-        } else {
-          // White captured a black piece
-          capturedPieces.black.push(
-            pieceUnicodeMap[move.captured.toLowerCase()] || "?"
-          );
-        }
-      }
-    }
-
-    setCapturedPiecesList(capturedPieces);
-  };
+  // Use the game handlers hook
+  const { status, isMyTurn, updateGameStatus, updateCapturedPieces } =
+    useGameHandlers({
+      gameRef,
+      isPlayer1,
+      isPlayer2,
+      pieceUnicodeMap,
+    });
 
   const onDrop = (sourceSquare: string, targetSquare: string) => {
     // Don't allow moves if game is over
@@ -97,18 +49,12 @@ export function ChessBoard({
       return false;
     }
 
-    // gameRef.current.move({
-    //   from: sourceSquare,
-    //   to: targetSquare,
-    //   promotion: "q", // Default to queen for now
-    // });
-
     // Only allow moves if it's the player's turn
     if (!isMyTurn()) {
       toast.error("It's not your turn!");
       return false;
     }
-
+    
     socket.emit("move", {
       gameId: roomDetails.id,
       move: {
@@ -133,10 +79,10 @@ export function ChessBoard({
       setFen(res.fen);
 
       // Update move history
-      setMoveHistory(res.history);
+      addMove(res.move);
 
       // Update captured pieces
-      updateCapturedPieces(res.history);
+      updateCapturedPieces(res.move);
 
       // Update game status
       updateGameStatus();
@@ -161,6 +107,7 @@ export function ChessBoard({
 
   useEffect(() => {
     // Initialize game state
+    setFen(roomDetails.fen || gameRef.current.fen());
     if (roomDetails?.fen) {
       gameRef.current.load(roomDetails.fen);
       setFen(roomDetails.fen);
@@ -168,25 +115,6 @@ export function ChessBoard({
 
     // Update initial status
     updateGameStatus();
-  }, [roomDetails]);
-
-  useEffect(() => {
-    setMoveHistory(roomDetails?.history || []);
-    if (!socket.connected) {
-      socket.connect();
-      if (roomDetails?.roomCode && userData?.id) {
-        socket.emit("join-room", {
-          code: roomDetails.roomCode,
-          userId: userData.id,
-        });
-      }
-    }
-
-    return () => {
-      if (socket.connected) {
-        socket.disconnect();
-      }
-    };
   }, [roomDetails]);
 
   return (

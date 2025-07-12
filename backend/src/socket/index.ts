@@ -43,7 +43,6 @@ const socketHandler = (io: Server) => {
         }
     });
 
-
     io.on('connection', (socket: AuthenticatedSocket) => {
         console.log(`Connected: ${socket.id}`);
 

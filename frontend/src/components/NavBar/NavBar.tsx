@@ -18,9 +18,12 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { routes } from "@/utils/constants/routes";
+import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
 
 export const NavBar = () => {
   const navigate = useNavigate();
+  const userData = LocalStorageGetItem("userData");
+
   const userStats = {
     username: "KnightMaster42",
     currentStreak: 3,
@@ -33,7 +36,7 @@ export const NavBar = () => {
 
   const handleLogout = () => {
     cookie.remove("accessToken");
-    cookie.remove("refreshToken")
+    cookie.remove("refreshToken");
     navigate(routes.auth.signIn);
   };
 
@@ -79,7 +82,7 @@ export const NavBar = () => {
           {/* User Menu */}
           <div className="flex items-center space-x-4">
             <div className="hidden sm:block text-primary text-lg font-semibold">
-              Welcome, {userStats.username}
+              Welcome, {userData?.username}
             </div>
 
             <DropdownMenu>
@@ -89,19 +92,19 @@ export const NavBar = () => {
                   className="flex items-center space-x-2 hover:bg-primary/10"
                 >
                   <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">{userStats.username}</span>
+                  <span className="hidden sm:inline">{userData.username}</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end" className="w-56">
                 <div className="px-2 py-1.5 text-sm font-medium text-primary">
-                  {userStats.username}
+                  {userData.username}
                 </div>
-                <div className="px-2 py-1 text-xs text-muted-foreground">
+                {/* <div className="px-2 py-1 text-xs text-muted-foreground">
                   {userStats.wins}W - {userStats.losses}L •{" "}
                   {userStats.gamesPlayed} Games
-                </div>
+                </div> */}
 
                 <DropdownMenuSeparator />
 
@@ -121,10 +124,10 @@ export const NavBar = () => {
                   <span>Settings</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem className="cursor-pointer">
+                {/* <DropdownMenuItem className="cursor-pointer">
                   <Trophy className="mr-2 h-4 w-4" />
                   <span>Statistics</span>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
 
                 <DropdownMenuSeparator />
 

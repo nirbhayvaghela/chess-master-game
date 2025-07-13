@@ -79,7 +79,7 @@ export function GameRoom() {
   };
 
   useSocketEvent("joined-room", (res) => {
-    console.log(res,"user-joiend redirect him");
+    console.log(res, "user-joiend redirect him");
     setIsJoining(false);
     toast.success(`You have joined room as a ${res.role} successfully.`);
     navigate(
@@ -107,8 +107,9 @@ export function GameRoom() {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          <Card className="border-border">
+        {/* <div className="grid lg:grid-cols-1 gap-8 "> */}
+        <div className="flex justify-center items-center">
+          <Card className="border-border min-w-[30vw] min-h-[30vh]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
@@ -199,7 +200,7 @@ export function GameRoom() {
             </CardContent>
           </Card>
 
-          <Card className="border-border">
+          {/* <Card className="border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary" />
@@ -242,7 +243,7 @@ export function GameRoom() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>

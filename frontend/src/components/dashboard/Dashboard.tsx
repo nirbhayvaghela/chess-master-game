@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
 
 type DashboardProps = {
   username: string;
@@ -21,6 +22,7 @@ export function DashboardCard({
   lastOpponent,
   lastResult,
 }: DashboardProps) {
+
   return (
     <Card className="mx-auto max-w-5xl bg-background border border-border rounded-xl shadow-lg">
       <CardHeader className="pb-2">

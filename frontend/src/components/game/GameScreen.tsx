@@ -6,7 +6,8 @@ import { MoveHistory } from "./MoveHistory";
 import { CapturedPieces } from "./CapturedPieces";
 import { SpectatorList } from "./SpectatorList";
 import { ChatPanel } from "./ChatPanel";
-import { ArrowLeft, Settings, Flag, X, CookingPot } from "lucide-react";
+import { X } from "lucide-react";
+import { FiClipboard, FiCheck } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetGameRoomDetails } from "@/hooks/queries/useGameRoom";
 import Loader from "../ui/loader";
@@ -23,6 +24,7 @@ export function GameScreen() {
   const navigate = useNavigate();
   const { gameId } = useParams();
   const [isOpenConfirmDialog, setIsOpenConfirmDialog] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const {
     setSpectatorList,
@@ -90,6 +92,13 @@ export function GameScreen() {
       default:
         return <Badge variant="secondary">{gameStatus}</Badge>;
     }
+  };
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   // Socket event handlers
@@ -202,8 +211,32 @@ export function GameScreen() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div>
-                <h1 className="text-2xl font-bold">Game {gameId}</h1>
+              <div className="space-y-2">
+                <h1 className="text-2xl font-bold">
+                  Room Name: {data?.roomName}
+                </h1>
+                <div className="flex items-center gap-2 text-sm mt-1">
+                  <span className="text-muted-foreground">Room code:</span>
+                  <span className="font-semibold text-white">
+                    {data?.roomCode}
+                  </span>
+                  <button
+                    onClick={() => handleCopy(data?.roomCode)}
+                    className="flex items-center gap-1 px-1 py-0.5 text-xs rounded-md border border-gray-500 text-gray-300 hover:bg-gray-700 transition-colors duration-200"
+                  >
+                    {copied ? (
+                      <>
+                        <FiCheck className="text-green-400" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <FiClipboard />
+                        Copy
+                      </>
+                    )}
+                  </button>
+                </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <span>
                     {data?.player1?.username} vs {data?.player2?.username}

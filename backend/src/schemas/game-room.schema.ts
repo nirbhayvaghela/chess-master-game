@@ -29,6 +29,7 @@ const chatSchema = z.object({
   roomId: z.number(),
   senderId: z.number(),
   message: z.string(),
+  username: z.string(),
 });
 export type chatSchemaType = z.infer<typeof chatSchema>;
 

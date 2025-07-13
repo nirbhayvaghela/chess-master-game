@@ -6,7 +6,7 @@ import { MoveHistory } from "./MoveHistory";
 import { CapturedPieces } from "./CapturedPieces";
 import { SpectatorList } from "./SpectatorList";
 import { ChatPanel } from "./ChatPanel";
-import { ArrowLeft, Settings, Flag, X } from "lucide-react";
+import { ArrowLeft, Settings, Flag, X, CookingPot } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetGameRoomDetails } from "@/hooks/queries/useGameRoom";
 import Loader from "../ui/loader";
@@ -25,12 +25,12 @@ export function GameScreen() {
   const [isOpenConfirmDialog, setIsOpenConfirmDialog] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const {
-    setFen,
-    capturedPieces,
+    setSpectatorList,
     addMove,
     setMoveHistory,
-    updateCapturedPiecesToStore,
     setCapturedPieces,
+    setMessages,
+    addMessage,
   } = useChessGameStore();
   // const [moveHistory, setMoveHistory] = useState([]);
   // const [capturedPiecesList, setCapturedPieceList] = useState({
@@ -40,7 +40,6 @@ export function GameScreen() {
   const [gameStatus, setGameStatus] = useState("waiting"); // waiting, playing, completed, draw
   const userData = LocalStorageGetItem("userData");
   const { data, isLoading } = useGetGameRoomDetails(Number(gameId));
-
   // Determine player colors and roles
   const isPlayer1 = userData?.id === data?.player1Id;
   const isPlayer2 = userData?.id === data?.player2Id;
@@ -120,7 +119,6 @@ export function GameScreen() {
     if (res.isPlayerLeft) {
       navigate(routes.dashboard);
     }
-    // Implement logic to handle win/loss dialog
   });
 
   useEffect(() => {
@@ -133,10 +131,23 @@ export function GameScreen() {
   }, [gameId, data?.status]);
 
   useEffect(() => {
+    if (data?.roomCode && userData?.id) {
+      if (!socket.connected) {
+        socket.connect();
+        console.log("Socket connected");
+        console.log("joining room");
+        socket.emit("join-room", {
+          code: data.roomCode,
+          userId: userData.id,
+        });
+      }
+    }
+
     if (data?.history.length === 0) {
       setMoveHistory([]);
       setCapturedPieces({ white: [], black: [] });
     }
+    if (data?.messages.length === 0) setMessages([]);
 
     const blackCaptures = [];
     const whiteCaptures = [];
@@ -145,7 +156,7 @@ export function GameScreen() {
       const move = JSON.parse(moveString);
       addMove(move);
       if (move.captured) {
-        console.log(move.color === "b")
+        console.log(move.color === "b");
         if (move.color === "b") {
           // Black captured a white piece
           blackCaptures.push(move);
@@ -155,26 +166,29 @@ export function GameScreen() {
         }
       }
     }
+    setSpectatorList(data?.spectators || []);
+
+    for (const message of data?.messages || []) {
+      addMessage({
+        message: message.message,
+        timestamp: message.timestamp,
+        sender: {
+          username: message.sender.username,
+          id: message.sender.id,
+        },
+      });
+    }
+
     setCapturedPieces({
       white: whiteCaptures,
       black: blackCaptures,
     });
 
-    if (!socket.connected) {
-      socket.connect();
-      if (data?.roomCode && userData?.id) {
-        socket.emit("join-room", {
-          code: data.roomCode,
-          userId: userData.id,
-        });
-      }
-    }
-
-    return () => {
-      if (socket.connected) {
-        socket.disconnect();
-      }
-    };
+    // return () => {
+    //   if (socket.connected) {
+    //     socket.disconnect();
+    //   }
+    // };
   }, [data]);
 
   if (isLoading) {
@@ -210,14 +224,14 @@ export function GameScreen() {
 
             <div className="flex items-center gap-2">
               {getGameStatusBadge()}
-              <Button variant="outline" size="icon">
+              {/* <Button variant="outline" size="icon">
                 <Settings className="h-4 w-4" />
               </Button>
               {isPlayer && (
                 <Button variant="outline" size="icon">
                   <Flag className="h-4 w-4" />
                 </Button>
-              )}
+              )} */}
               <Button
                 variant="destructive"
                 className="flex items-center gap-2"
@@ -261,7 +275,7 @@ export function GameScreen() {
                 isPlayer={isPlayer}
               />
               <div className="h-96">
-                <ChatPanel gameMessages={data?.messages} roomDetails={data} />
+                <ChatPanel roomDetails={data} />
               </div>
             </div>
           </div>

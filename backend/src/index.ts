@@ -38,6 +38,7 @@ app.use(
     credentials: true,
   })
 );
+
 app.use((_, res, next) => {
   res.header("Access-Control-Allow-Origin", process.env.CORS_ORIGIN);
   res.header("Access-Control-Allow-Headers", "*");

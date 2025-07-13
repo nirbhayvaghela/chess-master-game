@@ -28,7 +28,6 @@ const groupCaptured = (moves: any[], color: "white" | "black") => {
 
 export function CapturedPieces() {
   const { capturedPieces } = useChessGameStore();
-  console.log(capturedPieces,"final state");
   const whiteCaptures = groupCaptured(capturedPieces.white, "white");
   const blackCaptures = groupCaptured(capturedPieces.black, "black");
 

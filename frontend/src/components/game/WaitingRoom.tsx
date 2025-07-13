@@ -151,11 +151,11 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
       }
     }
 
-    return () => {
-      if (socket.connected) {
-        socket.disconnect();
-      }
-    };
+    // return () => {
+    //   if (socket.connected) {
+    //     socket.disconnect();
+    //   }
+    // };
   }, [data]);
 
   if (isLoading) {

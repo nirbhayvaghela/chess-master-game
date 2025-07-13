@@ -25,15 +25,27 @@ interface Spectator {
   email: string;
 }
 
+interface message {
+  message: string;
+  sender: {
+    username: string;
+    id: number;
+  };
+  timestamp: Date;
+}
+
 interface ChessGameState {
   // State
   fen: string;
   moveHistory: MoveHistoryItem[];
   capturedPieces: CapturedPieces;
   spectatorList: Spectator[];
+  messages: message[];
 
   // Actions
   addMove: (move: MoveHistoryItem) => void;
+  addMessage: (message: message) => void;
+  setMessages: (messages: message[]) => void;
   setFen: (fen: string) => void;
   setMoveHistory: (history: MoveHistoryItem[]) => void;
   clearMoveHistory: () => void;
@@ -67,6 +79,7 @@ export const useChessGameStore = create<ChessGameState>()(
       moveHistory: [],
       capturedPieces: initialCapturedPieces,
       spectatorList: [],
+      messages: [],
 
       // Move history actions
       addMove: (move) =>
@@ -78,6 +91,16 @@ export const useChessGameStore = create<ChessGameState>()(
           "addMove"
         ),
 
+      addMessage: (message) => {
+        set((state) => ({
+          messages: [...state.messages, message],
+        }));
+      },
+      setMessages: (messages) => {
+        set((state) => ({
+          messages,
+        }));
+      },
       setFen: (fen) => set({ fen }, false, "setFen"),
 
       setMoveHistory: (history) =>

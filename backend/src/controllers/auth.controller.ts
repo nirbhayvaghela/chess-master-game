@@ -7,12 +7,14 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "../utils/helpers/generateTokens";
+import { CookieOptions } from "express";
 
-const options = {
-  httpOnly: process.env.NODE_ENV === "production" ? true : false,
-  sameSite:
-    process.env.NODE_ENV === "production" ? "none" : ("lax" as "lax" | "none"),
-  secure: true,
+const isProd = process.env.NODE_ENV === "production";
+
+const options: CookieOptions = {
+  httpOnly: isProd,
+  sameSite: isProd ? "none" : "lax", // use lowercase here
+  secure: isProd,
   maxAge: 24 * 60 * 60 * 1000,
   path: "/",
 };

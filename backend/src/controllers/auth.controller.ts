@@ -9,15 +9,23 @@ import {
 } from "../utils/helpers/generateTokens";
 import { CookieOptions } from "express";
 
-const isProd = process.env.NODE_ENV === "production";
+// const isProd = process.env.NODE_ENV === "production";
+
+// const options: CookieOptions = {
+//   httpOnly: isProd,
+//   sameSite: isProd ? "none" : "lax", // use lowercase here
+//   secure: isProd,
+//   maxAge: 24 * 60 * 60 * 1000,
+//   path: "/",
+// };
 
 const options: CookieOptions = {
-  httpOnly: isProd,
-  sameSite: isProd ? "none" : "lax", // use lowercase here
-  secure: isProd,
-  maxAge: 24 * 60 * 60 * 1000,
-  path: "/",
-};
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+  path: "/",          
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+}
 
 const signUp = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;

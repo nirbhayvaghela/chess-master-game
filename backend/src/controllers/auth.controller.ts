@@ -113,6 +113,9 @@ const signIn = asyncHandler(async (req, res) => {
     },
   });
 
+  console.log(options,"options");
+  console.log(process.env.NODE_ENV,"production");
+
   // Return success response with tokens
   return res
     .status(StatusCodes.OK)

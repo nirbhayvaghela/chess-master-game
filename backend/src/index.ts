@@ -28,6 +28,7 @@ const io = new Server(server, {
 
 connectRedis().then(() => {
   console.log("Connected to Redis");
+  console.log(process.env.CORS_ORIGIN, "Redis URL");
 });
 
 socketHandler(io);

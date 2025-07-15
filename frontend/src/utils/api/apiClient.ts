@@ -4,7 +4,7 @@ import { LocalStorageGetItem } from "../helpers/storageHelper";
 
 export const apiClient = axios.create({
   baseURL: `${import.meta.env.VITE_BACKEND_URL}/api/v1`,
-  withCredentials: true,
+  // withCredentials: true,
 });
 
 apiClient.interceptors.request.use(
@@ -26,3 +26,5 @@ apiClient.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
+
+// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTgsImlhdCI6MTc1MjU3NDY0OCwiZXhwIjoxNzUyNTc4MjQ4fQ.4Ne8ADGXNjKc909o-0VU5t2FspfTRRCqyXrMkt88GpU

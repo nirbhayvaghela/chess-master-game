@@ -10,7 +10,7 @@ export const verifyJWT = asyncHandler(
     const token =
       req.cookies.accessToken ||
       req.header("Authorization")?.replace("Bearer ", "");
-
+      
     if (!token) {
       res.status(StatusCodes.UNAUTHORIZED).json({
         statusCode: StatusCodes.UNAUTHORIZED,

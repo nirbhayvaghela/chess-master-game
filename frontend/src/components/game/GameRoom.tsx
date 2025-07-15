@@ -56,7 +56,7 @@ export function GameRoom() {
 
     if (room.player1Id) {
       if (!socket.connected) {
-        socket.auth.token = LocalStorageGetItem("userData")?.access || "";
+        socket.auth.token = LocalStorageGetItem("userData")?.accessToken || "";
         socket.connect();
       }
 

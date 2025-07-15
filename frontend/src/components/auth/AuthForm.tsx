@@ -48,6 +48,7 @@ export function AuthForm() {
     };
 
     const result = await signInMutation.mutateAsync(signInPayload);
+    console.log(result,"result")
     if(result.data.data.user.accessToken) {
       LocalStorageSetItem("userData", result.data.data.user);
       navigate(routes.dashboard);

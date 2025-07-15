@@ -118,8 +118,8 @@ const signIn = asyncHandler(async (req, res) => {
   const user = await db.user.update({
     where: { id: existingUser.id },
     data: {
-    // accessToken: accessToken,
-      refreshToken: token,
+    accessToken: token,
+      // refreshToken: token,
     },
   });
 

@@ -20,7 +20,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: process.env.CORS_ORIGIN,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   },
@@ -28,20 +28,24 @@ const io = new Server(server, {
 
 connectRedis().then(() => {
   console.log("Connected to Redis");
-  console.log("*", "Redis URL");
+  console.log(process.env.CORS_ORIGIN, "Redis URL");
 });
 
 socketHandler(io);
 
+app.set('trust proxy', 1);
+
+
 app.use(
   cors({
-    origin: "*",
+    origin: process.env.CORS_ORIGIN,
     credentials: true,
   })
 );
 
+
 app.use((_, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Origin", process.env.CORS_ORIGIN);
   res.header("Access-Control-Allow-Headers", "*");
   res.header("Access-Control-Allow-Credentials", "true");
   next();

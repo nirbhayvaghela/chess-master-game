@@ -14,7 +14,9 @@ enum ErrorCode {
 export const errorHandler = async (code: number) => {
   if (code === ErrorCode.TokenExpired || code === ErrorCode.Unauthorized) {
     const refreshToken = Cookies.get("refreshToken");
+    
     const res = await refreshAccessToken({ refreshToken });
+
     if(res.status === ErrorCode.Unauthorized) {
       Cookies.remove("accessToken");
       Cookies.remove("refreshToken");

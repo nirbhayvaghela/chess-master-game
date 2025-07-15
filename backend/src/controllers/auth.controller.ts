@@ -2,30 +2,32 @@ import { asyncHandler } from "../utils/asynHandler";
 import { db } from "../lib/db";
 import { StatusCodes } from "../utils/constants/http_status_codes";
 import * as scrypt from "../scrypt";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import {
   generateAccessToken,
   generateRefreshToken,
 } from "../utils/helpers/generateTokens";
 import { CookieOptions } from "express";
+import { success } from "zod/v4";
+import { fa } from "zod/v4/locales";
 
-// const isProd = process.env.NODE_ENV === "production";
-// 
-// const options: CookieOptions = {
-//   httpOnly: isProd,
-//   sameSite: isProd ? "none" : "lax", // use lowercase here
-//   secure: isProd,
-//   maxAge: 24 * 60 * 60 * 1000,
-//   path: "/",
-// };
+const isProd = process.env.NODE_ENV === "production";
 
 const options: CookieOptions = {
-  httpOnly: true,
-  secure: true,
-  sameSite: "none",
+  httpOnly: isProd,
+  secure: isProd,
+  sameSite: isProd ? "none" : "lax", // use lowercase here
+  maxAge: 24 * 60 * 60 * 1000,
   path: "/",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
 };
+
+// const options: CookieOptions = {
+//   httpOnly: true,
+//   secure: true,
+//   sameSite: "none",
+//   path: "/",
+//   maxAge: 7 * 24 * 60 * 60 * 1000,
+// };
 
 
 const signUp = asyncHandler(async (req, res) => {
@@ -60,7 +62,7 @@ const signUp = asyncHandler(async (req, res) => {
     data: {
       username,
       email,
-      password: hashedPassword, 
+      password: hashedPassword,
     },
   });
 
@@ -122,8 +124,8 @@ const signIn = asyncHandler(async (req, res) => {
     },
   });
 
-  console.log(options,"options");
-  console.log(process.env.NODE_ENV,"production");
+  console.log(options, "options");
+  console.log(process.env.NODE_ENV, "production");
 
   // Return success response with tokens
   return res
@@ -197,6 +199,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const user = await db.user.findUnique({
     where: { id: decodedToken.id },
   });
+
   if (!user || user.refreshToken !== incomingRefreshToken) {
     return res.status(StatusCodes.UNAUTHORIZED).json({
       status: StatusCodes.UNAUTHORIZED,
@@ -229,4 +232,37 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     });
 });
 
-export { signUp, signIn, logout, refreshAccessToken };
+const verifiyToken = asyncHandler(async (req, res) => {
+  const accessToken = req.cookies.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+
+  if (!accessToken) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      success: false,
+      status: StatusCodes.UNAUTHORIZED,
+      message: "Unauthorized request",
+    });
+  }
+
+  const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET!) as JwtPayload;
+  
+  const user = await db.user.findUnique({
+      where:{
+        id: decodedToken.id,
+      }
+  });
+
+  if(user) {
+    return res.status(StatusCodes.OK).json({
+      success: false,
+      status: StatusCodes.OK,
+      message: "Token is valid",
+    })
+  }
+  return res.status(StatusCodes.UNAUTHORIZED).json({
+    success: false,
+    status: StatusCodes.UNAUTHORIZED,
+    message: "Invalid token",
+  });
+})
+
+export { signUp, signIn, logout, refreshAccessToken, verifiyToken };

@@ -1,6 +1,6 @@
 import { SignInSchemaType, SignUpSchemaType } from "@/schemas/auth.schema";
-import { logOut, signIn, signUp } from "@/services/auth.service";
-import { useMutation } from "@tanstack/react-query";
+import { logOut, signIn, signUp, verifyToken } from "@/services/auth.service";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 export const useSignIn = () => {
   const response = useMutation({
@@ -35,13 +35,13 @@ export const useLogOut = () => {
   return response;
 };
 
-// export const useRefreshToken = () => {
-//   const response = useMutation({
-//     mutationKey: ["useRefreshToken"],
-//     mutationFn: async () => {
-//       const res = await refreshToken();
-//       return res;
-//     },
-//   });
-//   return response;
-// };
+export const useVerifyToken = () => {
+  const response = useQuery({
+    queryKey: ["useVerifyToken"],
+    queryFn: async () => {
+      const res = await verifyToken();
+      return res;
+    }
+  });
+  return response;
+}

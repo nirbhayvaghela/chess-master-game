@@ -90,7 +90,7 @@ export const verifyToken = async () => {
       error?.response?.data?.message ??
         "Something went wrong. Please try again."
     );
-    errorHandler(response.data.statusCode);
+    // errorHandler(response.data.statusCode);
   }
   return response;
 }

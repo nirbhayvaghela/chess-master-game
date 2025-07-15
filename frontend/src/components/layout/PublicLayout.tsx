@@ -8,19 +8,18 @@ import Loader from "../ui/loader";
 export function PublicLayout() {
   const navigate = useNavigate();
 
-  // const { data, isPending } = useVerifyToken();
-  // console.log(data," data");
+  const { data, isPending } = useVerifyToken();
 
-  // useEffect(() => {
-  //   // const token = Cookie.get("accessToken");
-  //   if (data?.data?.status ===  200) {
-  //     navigate(routes.dashboard);
-  //   }
-  // }, [navigate, data]);
+  useEffect(() => {
+    // const token = Cookie.get("accessToken");
+    if (data?.data?.status ===  200) {
+      navigate(routes.dashboard);
+    }
+  }, [navigate, data]);
 
-  // if (isPending) {
-  //   return <Loader />
-  // }
+  if (isPending) {
+    return <Loader />
+  }
 
   // useEffect(() => {
   //   const token = cookie.get("accessToken");

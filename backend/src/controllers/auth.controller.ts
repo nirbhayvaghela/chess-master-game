@@ -23,7 +23,7 @@ const options: CookieOptions = {
   httpOnly: true,               // hide from JS
   secure: true,                 // HTTPS only
   sameSite: "none",            // needed for cross-site requests :contentReference[oaicite:1]{index=1}
-  domain: "https://chess-master-game.vercel.app", // exact domain of your frontend
+  domain: "chess-master-game.vercel.app", // exact domain of your frontend
   path: "/",
   maxAge: 7 * 24 * 60 * 60 * 1000, // e.g. 7 days
   partitioned: true            // helps in browsers like Chrome for third-party cookies :contentReference[oaicite:2]{index=2}

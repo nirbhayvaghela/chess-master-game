@@ -9,14 +9,13 @@ import Loader from "../ui/loader";
 export function PrivateLayout() {
   const navigate = useNavigate();
   const { data, isPending } = useVerifyToken();
-  console.log(data," data");
 
-  useEffect(() => {
-    // const token = Cookie.get("accessToken");
-    if (data?.data?.status !==  200) {
-      navigate(routes.auth.signIn);
-    }
-  }, [navigate, data]);
+  // useEffect(() => {
+  //   // const token = Cookie.get("accessToken");
+  //   if (data?.data?.status !==  200) {
+  //     navigate(routes.auth.signIn);
+  //   }
+  // }, [navigate, data]);
 
   if (isPending) {
     return <Loader />

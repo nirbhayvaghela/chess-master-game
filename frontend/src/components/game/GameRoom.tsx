@@ -18,8 +18,6 @@ import socket from "@/lib/socket";
 import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
 import { toast } from "sonner";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
-import Cookies from "js-cookie";
-import { stat } from "fs";
 
 export function GameRoom() {
   const [searchParams] = useSearchParams();
@@ -58,7 +56,7 @@ export function GameRoom() {
 
     if (room.player1Id) {
       if (!socket.connected) {
-        socket.auth.token = Cookies.get("accessToken") || "";
+        socket.auth.token = LocalStorageGetItem("userData")?.access || "";
         socket.connect();
       }
 
@@ -70,7 +68,8 @@ export function GameRoom() {
     if (!joinCode) return;
 
     if (!socket.connected) {
-      socket.auth.token = Cookies.get("accessToken") || "";
+      // socket.auth.token = Cookies.get("accessToken") || "";
+      socket.auth.token = LocalStorageGetItem("userData")?.accessToken || "";
       socket.connect();
     }
 

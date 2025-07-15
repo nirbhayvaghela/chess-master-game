@@ -1,9 +1,9 @@
 // import { RefreshToken } from "./isAuthenticated";
 
 import { toast } from "sonner";
-import Cookies from "js-cookie";
 import { refreshAccessToken } from "@/services/auth.service";
 import { routes } from "../constants/routes";
+import { LocalStorageRemoveItem } from "./storageHelper";
 
 enum ErrorCode {
   TokenExpired = 410, // Expired token
@@ -13,13 +13,14 @@ enum ErrorCode {
 
 export const errorHandler = async (code: number) => {
   if (code === ErrorCode.TokenExpired || code === ErrorCode.Unauthorized) {
-    const refreshToken = Cookies.get("refreshToken");
+    // const refreshToken = Cookies.get("refreshToken");
     
-    const res = await refreshAccessToken({ refreshToken });
+    // const res = await refreshAccessToken({ refreshToken });
 
-    if(res.status === ErrorCode.Unauthorized) {
-      Cookies.remove("accessToken");
-      Cookies.remove("refreshToken");
+    if(code === ErrorCode.Unauthorized) {
+      // Cookies.remove("accessToken");
+      // Cookies.remove("refreshToken");
+      LocalStorageRemoveItem("userData");
       toast.error("Token expired. Please login again.");
       window.location.href = routes.auth.signIn; 
     }

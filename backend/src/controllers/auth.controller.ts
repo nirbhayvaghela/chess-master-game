@@ -29,7 +29,6 @@ const options: CookieOptions = {
 //   maxAge: 7 * 24 * 60 * 60 * 1000,
 // };
 
-
 const signUp = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -112,26 +111,24 @@ const signIn = asyncHandler(async (req, res) => {
     });
   }
 
-  const accessToken = generateAccessToken(existingUser.id);
-  const refreshToken = generateRefreshToken(existingUser.id);
+  const token = generateAccessToken(existingUser.id);
+  // const token = generateRefreshToken(existingUser.id);
 
   // Update db with new tokens
   const user = await db.user.update({
     where: { id: existingUser.id },
     data: {
-      accessToken: accessToken,
-      refreshToken: refreshToken,
+    // accessToken: accessToken,
+      refreshToken: token,
     },
   });
 
-  console.log(options, "options");
-  console.log(process.env.NODE_ENV, "production");
 
   // Return success response with tokens
   return res
     .status(StatusCodes.OK)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    // .cookie("accessToken", accessToken, options)
+    // .cookie("refreshToken", refreshToken, options)
     .json({
       status: StatusCodes.OK,
       data: {
@@ -164,105 +161,105 @@ const logout = asyncHandler(async (req, res) => {
   // Clear cookies
   return res
     .status(StatusCodes.OK)
-    .cookie("accessToken", "", {
-      httpOnly: true,
-      secure: true,
-      expires: new Date(0),
-    })
-    .cookie("refreshToken", "", {
-      httpOnly: true,
-      secure: true,
-      expires: new Date(0),
-    })
+    // .cookie("accessToken", "", {
+    //   httpOnly: true,
+    //   secure: true,
+    //   expires: new Date(0),
+    // })
+    // .cookie("refreshToken", "", {
+    //   httpOnly: true,
+    //   secure: true,
+    //   expires: new Date(0),
+    // })
     .json({
       status: StatusCodes.OK,
       message: "User logged out successfully",
     });
 });
 
-const refreshAccessToken = asyncHandler(async (req, res) => {
-  const incomingRefreshToken =
-    req.cookies.refreshToken ||
-    req.header("Authorization")?.replace("Bearer ", "");
-  if (!incomingRefreshToken) {
-    res.status(StatusCodes.UNAUTHORIZED).json({
-      status: StatusCodes.UNAUTHORIZED,
-      message: "unauthorized request",
-    });
-  }
+// const refreshAccessToken = asyncHandler(async (req, res) => {
+//   const incomingRefreshToken =
+//     req.cookies.refreshToken ||
+//     req.header("Authorization")?.replace("Bearer ", "");
+//   if (!incomingRefreshToken) {
+//     res.status(StatusCodes.UNAUTHORIZED).json({
+//       status: StatusCodes.UNAUTHORIZED,
+//       message: "unauthorized request",
+//     });
+//   }
 
-  const decodedToken = jwt.verify(
-    incomingRefreshToken,
-    process.env.REFRESH_TOKEN_SECRET || ""
-  ) as jwt.JwtPayload;
+//   const decodedToken = jwt.verify(
+//     incomingRefreshToken,
+//     process.env.REFRESH_TOKEN_SECRET || ""
+//   ) as jwt.JwtPayload;
 
-  const user = await db.user.findUnique({
-    where: { id: decodedToken.id },
-  });
+//   const user = await db.user.findUnique({
+//     where: { id: decodedToken.id },
+//   });
 
-  if (!user || user.refreshToken !== incomingRefreshToken) {
-    return res.status(StatusCodes.UNAUTHORIZED).json({
-      status: StatusCodes.UNAUTHORIZED,
-      message: "Invalid refresh token",
-    });
-  }
+//   if (!user || user.refreshToken !== incomingRefreshToken) {
+//     return res.status(StatusCodes.UNAUTHORIZED).json({
+//       status: StatusCodes.UNAUTHORIZED,
+//       message: "Invalid refresh token",
+//     });
+//   }
 
-  const accessToken = generateAccessToken(user.id);
-  const refreshToken = generateRefreshToken(user.id);
+//   const accessToken = generateAccessToken(user.id);
+//   const refreshToken = generateRefreshToken(user.id);
 
-  await db.user.update({
-    where: { id: user.id },
-    data: {
-      accessToken: accessToken,
-      refreshToken: refreshToken,
-    },
-  });
+//   await db.user.update({
+//     where: { id: user.id },
+//     data: {
+//       accessToken: accessToken,
+//       refreshToken: refreshToken,
+//     },
+//   });
 
-  return res
-    .status(StatusCodes.OK)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json({
-      status: StatusCodes.OK,
-      data: {
-        accessToken,
-        refreshToken,
-      },
-      message: "Tokens refreshed successfully",
-    });
-});
+//   return res
+//     .status(StatusCodes.OK)
+//     .cookie("accessToken", accessToken, options)
+//     .cookie("refreshToken", refreshToken, options)
+//     .json({
+//       status: StatusCodes.OK,
+//       data: {
+//         accessToken,
+//         refreshToken,
+//       },
+//       message: "Tokens refreshed successfully",
+//     });
+// });
 
-const verifiyToken = asyncHandler(async (req, res) => {
-  const accessToken = req.cookies.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+// const verifiyToken = asyncHandler(async (req, res) => {
+//   const accessToken = req.cookies.accessToken || req.header("Authorization")?.replace("Bearer ", "");
 
-  if (!accessToken) {
-    return res.status(StatusCodes.UNAUTHORIZED).json({
-      success: false,
-      status: StatusCodes.UNAUTHORIZED,
-      message: "Unauthorized request",
-    });
-  }
+//   if (!accessToken) {
+//     return res.status(StatusCodes.UNAUTHORIZED).json({
+//       success: false,
+//       status: StatusCodes.UNAUTHORIZED,
+//       message: "Unauthorized request",
+//     });
+//   }
 
-  const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET!) as JwtPayload;
+//   const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET!) as JwtPayload;
   
-  const user = await db.user.findUnique({
-      where:{
-        id: decodedToken.id,
-      }
-  });
+//   const user = await db.user.findUnique({
+//       where:{
+//         id: decodedToken.id,
+//       }
+//   });
 
-  if(user) {
-    return res.status(StatusCodes.OK).json({
-      success: false,
-      status: StatusCodes.OK,
-      message: "Token is valid",
-    })
-  }
-  return res.status(StatusCodes.UNAUTHORIZED).json({
-    success: false,
-    status: StatusCodes.UNAUTHORIZED,
-    message: "Invalid token",
-  });
-})
+//   if(user) {
+//     return res.status(StatusCodes.OK).json({
+//       success: false,
+//       status: StatusCodes.OK,
+//       message: "Token is valid",
+//     })
+//   }
+//   return res.status(StatusCodes.UNAUTHORIZED).json({
+//     success: false,
+//     status: StatusCodes.UNAUTHORIZED,
+//     message: "Invalid token",
+//   });
+// })
 
-export { signUp, signIn, logout, refreshAccessToken, verifiyToken };
+export { signUp, signIn, logout };

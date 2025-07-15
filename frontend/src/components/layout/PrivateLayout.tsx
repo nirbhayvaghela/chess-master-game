@@ -1,25 +1,21 @@
-import { routes } from "@/utils/constants/routes";
-import { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import Cookie from "js-cookie";
 import { NavBar } from "../NavBar/NavBar";
 import { useVerifyToken } from "@/hooks/queries/useAuth";
 import Loader from "../ui/loader";
+import { useEffect } from "react";
+import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
+import { routes } from "@/utils/constants/routes";
 
 export function PrivateLayout() {
   const navigate = useNavigate();
-  const { data, isPending } = useVerifyToken();
 
-  // useEffect(() => {
-  //   // const token = Cookie.get("accessToken");
-  //   if (data?.data?.status !==  200) {
-  //     navigate(routes.auth.signIn);
-  //   }
-  // }, [navigate, data]);
-
-  if (isPending) {
-    return <Loader />
-  }
+  useEffect(() => {
+    // const token = Cookie.get("accessToken");
+    const token = LocalStorageGetItem("userData")?.accessToken;
+    if (!token) {
+      navigate(routes.auth.signIn);
+    }
+  }, [navigate]);
   
   return (
     <div className="flex flex-col min-h-screen">

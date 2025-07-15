@@ -7,7 +7,6 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import cookie from "js-cookie";
 import {
   ChevronDown,
   User,
@@ -18,7 +17,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { routes } from "@/utils/constants/routes";
-import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
+import { LocalStorageGetItem, LocalStorageRemoveItem } from "@/utils/helpers/storageHelper";
 
 export const NavBar = () => {
   const navigate = useNavigate();
@@ -35,8 +34,9 @@ export const NavBar = () => {
   };
 
   const handleLogout = () => {
-    cookie.remove("accessToken");
-    cookie.remove("refreshToken");
+    LocalStorageRemoveItem("userData");
+    // cookie.remove("accessToken");
+    // cookie.remove("refreshToken");
     navigate(routes.auth.signIn);
   };
 
@@ -74,7 +74,7 @@ export const NavBar = () => {
             <div className="text-secondary-foreground">
               Last vs {userStats.lastMatch}:
               <span className="text-green-500 ml-1 font-semibold">
-                {userStats.lastResult}
+                {userStats?.lastResult}
               </span>
             </div>
           </div>
@@ -92,14 +92,14 @@ export const NavBar = () => {
                   className="flex items-center space-x-2 hover:bg-primary/10"
                 >
                   <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">{userData.username}</span>
+                  <span className="hidden sm:inline">{userData?.username}</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end" className="w-56">
                 <div className="px-2 py-1.5 text-sm font-medium text-primary">
-                  {userData.username}
+                  {userData?.username}
                 </div>
                 {/* <div className="px-2 py-1 text-xs text-muted-foreground">
                   {userStats.wins}W - {userStats.losses}L •{" "}

@@ -15,7 +15,6 @@ import { useNavigate } from "react-router-dom";
 import { SignInSchemaType, SignUpSchemaType } from "@/schemas/auth.schema";
 import { useSignIn, useSignUp } from "@/hooks/queries/useAuth";
 import { toast } from "sonner";
-import cookie from "js-cookie";
 import { routes } from "@/utils/constants/routes";
 import { LocalStorageSetItem } from "@/utils/helpers/storageHelper";
 
@@ -71,7 +70,6 @@ export function AuthForm() {
     };
 
     const res = await signUpMutation.mutateAsync(signUpPayload);
-    console.log(res,"res")
     toast.success("Account created successfully, please sign in.");
     setActiveTab("signin");
   };

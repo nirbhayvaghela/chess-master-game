@@ -1,5 +1,5 @@
+import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
 import { io, Socket } from "socket.io-client";
-import Cookies from "js-cookie";
 
 interface AuthSocket extends Socket {
   auth: {
@@ -7,10 +7,12 @@ interface AuthSocket extends Socket {
   };
 }
 
+const token = LocalStorageGetItem("userData")?.accessToken;
+
 const socket = io(import.meta.env.VITE_BACKEND_URL, {
   withCredentials: true,
   auth: {
-    token: Cookies.get("accessToken") || "",
+    token: token || "",
   },
   autoConnect: false,
 });

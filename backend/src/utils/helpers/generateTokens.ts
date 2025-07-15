@@ -7,7 +7,7 @@ export function generateAccessToken(userId: number) {
     },
     process.env.ACCESS_TOKEN_SECRET || "",
     {
-      expiresIn: (process.env.ACCESS_TOKEN_EXPIRY || "1h") as SignOptions['expiresIn'],
+      expiresIn: (process.env.ACCESS_TOKEN_EXPIRY || "1d") as SignOptions['expiresIn'],
     }
   );
 }
@@ -19,7 +19,7 @@ export function generateRefreshToken(userId: number) {
     },
     process.env.REFRESH_TOKEN_SECRET || "",
     {
-      expiresIn: (process.env.REFRESH_TOKEN_EXPIRY || "7d") as SignOptions['expiresIn'],
+      expiresIn: (process.env.REFRESH_TOKEN_EXPIRY || "1d") as SignOptions['expiresIn'],
     }
   );
 }

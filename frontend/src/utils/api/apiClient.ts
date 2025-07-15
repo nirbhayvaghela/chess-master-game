@@ -1,5 +1,5 @@
 import axios from "axios";
-import Cookies from "js-cookie";
+import { LocalStorageGetItem } from "../helpers/storageHelper";
 // import { LocalStorageGetItem, SessionStorageGetItem } from "../helpers";
 
 export const apiClient = axios.create({
@@ -10,10 +10,12 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // const token = Cookies.get("token");
+    const token = LocalStorageGetItem("userData")?.accessToken;
 
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
 
     // Prevent caching
     config.headers["Cache-Control"] = "no-cache, no-store, must-revalidate";

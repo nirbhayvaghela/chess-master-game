@@ -1,5 +1,3 @@
-import { verifyToken } from "@/services/auth.service";
-import { getGameRoomDetails } from "@/services/game-room.sevice";
 
 export const API = {
     singUp: "/auth/signup",
@@ -8,6 +6,6 @@ export const API = {
     verifyToken:"/auth/verify-token",
     refreshToken: "/auth/refresh-token",
     createGameRoom: "/game-room/create-room",
-    getGameRoomDetails: (id:number) => `/game-room?roomId=${id}`
-,
+    getGameRoomDetails: (id:number) => `/game-room?roomId=${id}`,
+    getDashboardStats: "/dashboard",
 }

@@ -59,7 +59,7 @@ export const NavBar = () => {
           </div>
 
           {/* User Stats - Center */}
-          <div className="hidden md:flex items-center space-x-6 text-sm">
+          {/* <div className="hidden md:flex items-center space-x-6 text-sm">
             <div className="flex items-center space-x-2">
               <div className="text-orange-500">🔥</div>
               <span className="text-secondary-foreground">
@@ -77,7 +77,7 @@ export const NavBar = () => {
                 {userStats?.lastResult}
               </span>
             </div>
-          </div>
+          </div> */}
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
@@ -97,43 +97,43 @@ export const NavBar = () => {
                 </Button>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="px-2 py-1.5 text-sm font-medium text-primary">
+              <DropdownMenuContent align="end" className="w-full ">
+                {/* <div className="px-2 py-1.5 text-sm font-medium text-primary">
                   {userData?.username}
-                </div>
+                </div> */}
                 {/* <div className="px-2 py-1 text-xs text-muted-foreground">
                   {userStats.wins}W - {userStats.losses}L •{" "}
                   {userStats.gamesPlayed} Games
                 </div> */}
 
-                <DropdownMenuSeparator />
+                {/* <DropdownMenuSeparator /> */}
 
-                <DropdownMenuItem
+                {/* <DropdownMenuItem
                   onClick={handleProfile}
                   className="cursor-pointer"
                 >
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
 
-                <DropdownMenuItem
+                {/* <DropdownMenuItem
                   onClick={handleSettings}
                   className="cursor-pointer"
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
 
                 {/* <DropdownMenuItem className="cursor-pointer">
                   <Trophy className="mr-2 h-4 w-4" />
                   <span>Statistics</span>
                 </DropdownMenuItem> */}
 
-                <DropdownMenuSeparator />
+                {/* <DropdownMenuSeparator /> */}
 
                 <DropdownMenuItem
                   onClick={handleLogout}
-                  className="cursor-pointer text-red-600 focus:text-red-600"
+                  className="cursor-pointer text-red-600 focus:text-red-600 "
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Logout</span>

@@ -9,6 +9,7 @@ import socketHandler from "./socket";
 
 import authRouter from "./routes/auth.route";
 import gameRoomRouter from "./routes/game-room.route";
+import dashboardRouter from "./routes/dashboard.route";
 import { connectRedis } from "./redis";
 
 dotenv.config({
@@ -35,14 +36,12 @@ socketHandler(io);
 
 app.set('trust proxy', 1);
 
-
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN,
     credentials: true,
   })
 );
-
 
 app.use((_, res, next) => {
   res.header("Access-Control-Allow-Origin", process.env.CORS_ORIGIN);
@@ -58,6 +57,7 @@ app.use(cookieParser());
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/game-room", gameRoomRouter);
+app.use("/api/v1/dashboard", dashboardRouter);
 
 app.get("/", (req, res) => {
   res.send("Welcome to the Chess Master Game API");

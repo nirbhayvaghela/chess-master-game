@@ -27,7 +27,6 @@ const App = () => (
             <Route path={routes.landingPage} element={<LandingPage />} />
             <Route path={routes.auth.signIn} element={<Auth />} />
           </Route>
-
           {/* Private routes */}
           <Route element={<PrivateLayout />}>
             <Route path={routes.dashboard} element={<Dashboard />} />
@@ -35,7 +34,6 @@ const App = () => (
             <Route path="/game/:gameId" element={<Game />} />
             <Route path="/game/waiting/:gameId" element={<WaitingRoom />} />
           </Route>
-
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -90,7 +90,6 @@ export const useChessGameStore = create<ChessGameState>()(
           false,
           "addMove"
         ),
-
       addMessage: (message) => {
         set((state) => ({
           messages: [...state.messages, message],
@@ -166,7 +165,6 @@ export const useChessGameStore = create<ChessGameState>()(
 
       clearSpectatorList: () =>
         set({ spectatorList: [] }, false, "clearSpectatorList"),
-
       // Reset all game state
       resetGameState: () =>
         set(

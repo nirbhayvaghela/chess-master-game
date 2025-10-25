@@ -15,7 +15,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCreateGameRoom } from "@/hooks/queries/useGameRoom";
 import { routes } from "@/utils/constants/routes";
 import socket from "@/lib/socket";
-import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
+import { LocalStorageGetItem, LocalStorageSetItem } from "@/utils/helpers/storageHelper";
 import { toast } from "sonner";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
 
@@ -81,6 +81,7 @@ export function GameRoom() {
     console.log(res, "user-joiend redirect him");
     setIsJoining(false);
     toast.success(`You have joined room as a ${res.role} successfully.`);
+    // LocalStorageSetItem("GameState",);
     navigate(
       res.role === "spectator"
         ? routes.game(res.room.id)

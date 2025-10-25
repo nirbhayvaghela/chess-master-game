@@ -136,4 +136,5 @@ const getRoomDetails = asyncHandler(async (req, res) => {
     },
   });
 });
+
 export { createRoom, getRoomDetails };

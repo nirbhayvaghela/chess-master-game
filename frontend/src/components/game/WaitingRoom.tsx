@@ -83,7 +83,7 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
     console.log("Game started in waiting:", res);
     setIsPlayer2Joined(true);
     setIsGameStarting(true);
-    setGameStartCountdown(15);
+    setGameStartCountdown(20);
     toast.success(`Player 2 joined the Game! Game starting in 15 seconds...`);
   });
 
@@ -300,10 +300,10 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
                 <div className="flex items-center justify-between p-4 bg-secondary rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold">
-                      {data.player1.username.charAt(0).toUpperCase()}
+                      {data?.player1?.username.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div className="font-medium">{data.player1.username}</div>
+                      <div className="font-medium">{data.player1?.username}</div>
                       <div className="text-sm text-muted-foreground">
                         Room Creator
                       </div>
@@ -334,7 +334,7 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
                       {isGameStarting && data?.player2?.id ? "✓" : "?"}
                     </div>
                     <div>
-                      <div className="font-medium">
+                      <div className="font-normal text-green-700">
                         {isGameStarting && data?.player2?.id
                           ? "Player 2 Joined!"
                           : "Waiting for player..."}

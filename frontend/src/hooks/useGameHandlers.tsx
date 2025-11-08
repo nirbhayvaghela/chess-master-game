@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, MutableRefObject } from "react";
-import { Chess, Move } from "chess.js";
+import { Chess, Move, Square } from "chess.js";
 import { useChessGameStore } from "@/store";
 
 type CapturedPieces = {
@@ -73,10 +73,17 @@ export const useGameHandlers = ({
     }
   };
 
+  // Function to get possible moves for a piece
+  const getPossibleMoves = (square: Square): Square[] => {
+    const moves = gameRef.current.moves({ square, verbose: true });
+    return moves.map((move) => move.to as Square);
+  };
+
   return {
     status,
     isMyTurn,
     updateGameStatus,
     updateCapturedPieces,
+    getPossibleMoves,
   };
 };

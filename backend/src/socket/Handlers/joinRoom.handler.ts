@@ -104,11 +104,19 @@ export const joinRoomHandler = (io: any, socket: any) => {
         });
       }
 
-      SocketResponder.toRoom(io, room.id, "user-joined", {
-        user,
-        roomStatus: room.status,
-        role,
-      });
+      if(role === "spectator") {
+        SocketResponder.toRoom(io, room.id, "spectator-joined", {
+          user,
+          roomStatus: room.status,
+          role,
+        });
+      } else {
+        SocketResponder.toRoom(io, room.id, "user-joined", {
+          user, 
+          roomStatus: room.status,
+          role,
+        });
+      }
     } catch (err: any) {
       console.error("join-room error:", err.message);
       responder.error("error", err.message || "Failed to join room.");

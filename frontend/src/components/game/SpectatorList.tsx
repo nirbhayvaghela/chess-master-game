@@ -45,6 +45,20 @@ export function SpectatorList({
 
   // user joied event
   useSocketEvent("user-joined", (res) => {
+    // addSpectator(res.user);
+    // setSpectators((prev) => [
+    //   ...prev,
+    //   {
+    //     ...res.user,
+    //   },
+    // ]);
+    if (userData.id !== res.user.id) {
+      toast.success(`${res.user.username} has joined the game!`);
+    }
+  });
+
+  // spectator joined event
+  useSocketEvent("spectator-joined", (res) => {
     addSpectator(res.user);
     // setSpectators((prev) => [
     //   ...prev,
@@ -66,12 +80,14 @@ export function SpectatorList({
     // );
     toast.success(res.message || "Specator removed successfully.");
   });
+
   // inform to spectator, who have been removed
   useSocketEvent("removed-from-room", (res) => {
     toast.success(res.message || "you have been removed from room");
     socket.disconnect();
     navigate(routes.dashboard);
   });
+  
   // spectator kicked off
   useSocketEvent("spectator-kicked", (res) => {
     // setSpectators((prev) =>

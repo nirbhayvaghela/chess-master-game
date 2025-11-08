@@ -20,6 +20,99 @@ import socket from "@/lib/socket";
 import { ConfirmDialog } from "../ui-elements/Dialog";
 import { useChessGameStore } from "@/store";
 
+const getGameStatusBadge = (gameStatus: string) => {
+  switch (gameStatus) {
+    case "waiting":
+      return (
+        <Badge
+          variant="secondary"
+          className="bg-yellow-500/10 text-yellow-600"
+        >
+          Waiting for Players
+        </Badge>
+      );
+
+    case "in_progress":
+    case "playing":
+      return (
+        <Badge
+          variant="secondary"
+          className="bg-green-500/10 text-green-600"
+        >
+          Game in Progress
+        </Badge>
+      );
+
+    case "win":
+      return (
+        <Badge
+          variant="secondary"
+          className="bg-emerald-500/10 text-emerald-600"
+        >
+          You Win! 🎉
+        </Badge>
+      );
+
+    case "lose":
+      return (
+        <Badge
+          variant="secondary"
+          className="bg-red-500/10 text-red-600"
+        >
+          You Lost 😔
+        </Badge>
+      );
+
+    case "draw":
+      return (
+        <Badge
+          variant="secondary"
+          className="bg-gray-500/10 text-gray-600"
+        >
+          Draw
+        </Badge>
+      );
+
+    case "stalemate":
+      return (
+        <Badge
+          variant="secondary"
+          className="bg-purple-500/10 text-purple-600"
+        >
+          Stalemate
+        </Badge>
+      );
+
+    case "completed":
+      return (
+        <Badge
+          variant="secondary"
+          className="bg-blue-500/10 text-blue-600"
+        >
+          Game Completed
+        </Badge>
+      );
+
+    case "aborted":
+      return (
+        <Badge
+          variant="destructive"
+          className="bg-red-500/10 text-red-600"
+        >
+          Game Aborted
+        </Badge>
+      );
+
+    default:
+      return (
+        <Badge variant="secondary" className="bg-gray-300 text-gray-700">
+          {gameStatus}
+        </Badge>
+      );
+  }
+};
+
+
 export function GameScreen() {
   const navigate = useNavigate();
   const { gameId } = useParams();
@@ -34,11 +127,6 @@ export function GameScreen() {
     setMessages,
     addMessage,
   } = useChessGameStore();
-  // const [moveHistory, setMoveHistory] = useState([]);
-  // const [capturedPiecesList, setCapturedPieceList] = useState({
-  //   white: [],
-  //   black: [],
-  // });
   const [gameStatus, setGameStatus] = useState("waiting"); // waiting, playing, completed, draw
   const userData = LocalStorageGetItem("userData");
   const { data, isLoading } = useGetGameRoomDetails(Number(gameId));
@@ -52,46 +140,6 @@ export function GameScreen() {
   const handleLeaveRoom = () => {
     socket.emit("leave-room", { roomId: Number(gameId), userId: userData?.id });
     setIsLeaving(true);
-  };
-
-  const getGameStatusBadge = () => {
-    switch (gameStatus) {
-      case "waiting":
-        return (
-          <Badge
-            variant="secondary"
-            className="bg-yellow-500/10 text-yellow-600"
-          >
-            Waiting for Players
-          </Badge>
-        );
-      // case "playing":
-      //   return (
-      //     <Badge variant="secondary" className="bg-green-500/10 text-green-600">
-      //       {currentTurn}'s Turn
-      //     </Badge>
-      //   );
-      case "completed":
-        return (
-          <Badge variant="secondary" className="bg-blue-500/10 text-blue-600">
-            Game Completed
-          </Badge>
-        );
-      case "draw":
-        return (
-          <Badge variant="secondary" className="bg-gray-500/10 text-gray-600">
-            Draw
-          </Badge>
-        );
-      case "aborted":
-        return (
-          <Badge variant="destructive" className="bg-red-500/10 text-red-600">
-            Game Aborted
-          </Badge>
-        );
-      default:
-        return <Badge variant="secondary">{gameStatus}</Badge>;
-    }
   };
 
   const handleCopy = (text: string) => {
@@ -158,12 +206,14 @@ export function GameScreen() {
     }
     if (data?.messages.length === 0) setMessages([]);
 
+    const moveHistory = [];
+    const messages = [];
     const blackCaptures = [];
     const whiteCaptures = [];
 
     for (const moveString of data?.history || []) {
       const move = JSON.parse(moveString);
-      addMove(move);
+      moveHistory.push(move);
       if (move.captured) {
         console.log(move.color === "b");
         if (move.color === "b") {
@@ -175,10 +225,9 @@ export function GameScreen() {
         }
       }
     }
-    setSpectatorList(data?.spectators || []);
 
     for (const message of data?.messages || []) {
-      addMessage({
+      messages.push({
         message: message.message,
         timestamp: message.timestamp,
         sender: {
@@ -188,6 +237,9 @@ export function GameScreen() {
       });
     }
 
+    setMoveHistory(moveHistory);
+    setSpectatorList(data?.spectators || []);
+    setMessages(messages);
     setCapturedPieces({
       white: whiteCaptures,
       black: blackCaptures,
@@ -256,7 +308,7 @@ export function GameScreen() {
             </div>
 
             <div className="flex items-center gap-2">
-              {getGameStatusBadge()}
+              {getGameStatusBadge(gameStatus)}
               {/* <Button variant="outline" size="icon">
                 <Settings className="h-4 w-4" />
               </Button>

@@ -30,6 +30,7 @@ export class SocketResponder {
   
     // Optional: to room
     static toRoom(io: any, roomId: number, event: string, payload: object, type: "success" | "error" = "success") {
+      console.log(roomId, event, payload, "SocketResponder toRoom");
       io.to(`room:${roomId}`).emit(event, {
         type,
         ...payload,

@@ -40,7 +40,9 @@ interface WaitingRoomProps {
 const WaitingRoom: React.FC<WaitingRoomProps> = () => {
   const { gameId } = useParams();
   const userData = LocalStorageGetItem("userData");
-  const { data, isLoading } = useGetGameRoomDetails(Number(gameId));
+  const { data: roomDetails, isLoading } = useGetGameRoomDetails(
+    Number(gameId)
+  );
   const [isLeaving, setIsLeaving] = useState(false);
   const [isOpenConfirmDialog, setIsOpenConfirmDialog] = useState(false);
   const [isPlayer2Joined, setIsPlayer2Joined] = useState(false);
@@ -49,22 +51,22 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
   const navigate = useNavigate();
 
   const copyGameCode = () => {
-    navigator.clipboard.writeText(data?.roomCode);
+    navigator.clipboard.writeText(roomDetails?.roomCode);
     toast.success("Game code copied! Share this code with your opponent");
   };
 
   const shareRoom = () => {
     const shareData = {
       title: "Chess Game Invitation",
-      text: `Join my chess game! Use code: ${data?.roomCode}`,
-      url: `${window.location.origin}/dashboard?roomCode=${data?.roomCode}`,
+      text: `Join my chess game! Use code: ${roomDetails?.roomCode}`,
+      url: `${window.location.origin}/dashboard?roomCode=${roomDetails?.roomCode}`,
     };
 
     if (navigator.share) {
       navigator.share(shareData);
     } else {
       navigator.clipboard.writeText(
-        `Join my chess game! Use code: ${data?.roomCode} at ${window.location.origin}`
+        `Join my chess game! Use code: ${roomDetails?.roomCode} at ${window.location.origin}`
       );
       toast.success("Invitation copied! Share this with your opponent");
     }
@@ -80,10 +82,10 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
 
   // join Game events
   useSocketEvent("game-start", (res: any) => {
-    console.log("Game started in waiting:", res);
+    console.log("Game starting:", res);
     setIsPlayer2Joined(true);
     setIsGameStarting(true);
-    setGameStartCountdown(20);
+    setGameStartCountdown(15);
     toast.success(`Player 2 joined the Game! Game starting in 15 seconds...`);
   });
 
@@ -97,10 +99,16 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
 
   // leave player-2 when player1(creator) left
   useSocketEvent("user-left", (res) => {
+    console.log(res, "user-left event");
     toast.success(`Game is ${res.roomStatus}, ${res.username} left the room.`);
     socket.disconnect();
     if (res.isRoomCreatorLeft) {
       navigate(routes.dashboard);
+    } else if (res.isPlayer2Left) {
+      // reset state for player-1 if player-2 left
+      setIsPlayer2Joined(false);
+      setIsGameStarting(false);
+      setGameStartCountdown(0);
     }
   });
 
@@ -120,19 +128,15 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
     socket.emit("validate-room-access", { roomId: Number(gameId) });
   }, []);
 
-  // Game start countdown timer
   useEffect(() => {
     let countdownTimer: NodeJS.Timeout;
-
     if (isGameStarting && gameStartCountdown > 0) {
       countdownTimer = setTimeout(() => {
         setGameStartCountdown((prev) => prev - 1);
       }, 1000);
     } else if (isGameStarting && gameStartCountdown === 0) {
-      // Navigate to game room when countdown reaches 0
       navigate(routes.game(Number(gameId)));
     }
-
     return () => {
       if (countdownTimer) {
         clearTimeout(countdownTimer);
@@ -141,11 +145,33 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
   }, [isGameStarting, gameStartCountdown, navigate, gameId]);
 
   useEffect(() => {
+    if (!roomDetails) return;
+    const { status } = roomDetails;
+
+    if (
+      !isGameStarting &&
+      status !== "waiting" &&
+      status !== "in_progress" &&
+      status !== "playing"
+    ) {
+      toast.error("Invalid room.");
+      navigate(routes.dashboard);
+      return;
+    }
+    if ((!isGameStarting && status === "in_progress") || status === "playing") {
+      navigate(routes.game(Number(gameId)));
+      return;
+    }
+
+    if (status === "waiting") return;
+  }, [roomDetails, navigate, gameId, isGameStarting]);
+
+  useEffect(() => {
     if (!socket.connected) {
       socket.connect();
-      if (data?.roomCode && userData.id) {
+      if (roomDetails?.roomCode && userData.id) {
         socket.emit("join-room", {
-          code: data?.roomCode,
+          code: roomDetails?.roomCode,
           userId: userData.id,
         });
       }
@@ -156,7 +182,7 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
     //     socket.disconnect();
     //   }
     // };
-  }, [data]);
+  }, [roomDetails, userData.id]);
 
   if (isLoading) {
     return <Loader className="w-screen h-screen" size="lg" />;
@@ -184,7 +210,7 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
                     : "Waiting for Player"}
                 </h1>
                 <p className="text-muted-foreground">
-                  Game Room: {data?.roomCode}
+                  Game Room: {roomDetails?.roomCode}
                 </p>
               </div>
             </div>
@@ -230,7 +256,8 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
                   Game Information
                 </CardTitle>
                 <CardDescription>
-                  {data?.roomName || `${data?.player1?.username}'s Game`}
+                  {roomDetails?.roomName ||
+                    `${roomDetails?.player1?.username}'s Game`}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -239,7 +266,7 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
                   <label className="text-sm font-medium">Game Code</label>
                   <div className="flex gap-2">
                     <div className="flex-1 p-3 bg-secondary rounded-lg font-mono text-lg text-center">
-                      {data.roomCode}
+                      {roomDetails.roomCode}
                     </div>
                     <Button
                       variant="outline"
@@ -285,12 +312,13 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-primary" />
-                  Players ({isGameStarting && data?.player2?.id ? "2" : "1"}/2)
+                  Players (
+                  {isGameStarting && roomDetails?.player2?.id ? "2" : "1"}/2)
                 </CardTitle>
                 <CardDescription>
                   {isGameStarting
                     ? "Both players ready - game starting!"
-                    : isGameStarting && data?.player2?.id
+                    : isGameStarting && roomDetails?.player2?.id
                     ? "Player 2 has joined!"
                     : "Waiting for an opponent to join"}
                 </CardDescription>
@@ -300,10 +328,12 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
                 <div className="flex items-center justify-between p-4 bg-secondary rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold">
-                      {data?.player1?.username.charAt(0).toUpperCase()}
+                      {roomDetails?.player1?.username.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div className="font-medium">{data.player1?.username}</div>
+                      <div className="font-medium">
+                        {roomDetails.player1?.username}
+                      </div>
                       <div className="text-sm text-muted-foreground">
                         Room Creator
                       </div>
@@ -318,7 +348,7 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
                 {/* Player 2 Slot */}
                 <div
                   className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all ${
-                    isGameStarting && data?.player2?.id
+                    isGameStarting && roomDetails?.player2?.id
                       ? "bg-green-50 border-green-200"
                       : "border-dashed border-muted-foreground/30"
                   }`}
@@ -326,23 +356,23 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                        isGameStarting && data?.player2?.id
+                        isGameStarting && roomDetails?.player2?.id
                           ? "bg-green-500 text-white"
                           : "bg-muted border-2 border-dashed border-muted-foreground/30"
                       }`}
                     >
-                      {isGameStarting && data?.player2?.id ? "✓" : "?"}
+                      {isGameStarting && roomDetails?.player2?.id ? "✓" : "?"}
                     </div>
                     <div>
                       <div className="font-normal text-green-700">
-                        {isGameStarting && data?.player2?.id
+                        {isGameStarting && roomDetails?.player2?.id
                           ? "Player 2 Joined!"
                           : "Waiting for player..."}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {isGameStarting
                           ? "Ready to play!"
-                          : isGameStarting && data?.player2?.id
+                          : isGameStarting && roomDetails?.player2?.id
                           ? "Game will start soon..."
                           : "Share the game code"}
                       </div>
@@ -396,7 +426,8 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
                         1
                       </div>
                       <span>
-                        Copy the game code: <strong>{data.roomCode}</strong>
+                        Copy the game code:{" "}
+                        <strong>{roomDetails.roomCode}</strong>
                       </span>
                     </div>
                     <div className="flex items-center gap-2">

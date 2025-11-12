@@ -1,3 +1,4 @@
+import { pl } from "zod/v4/locales";
 import { db } from "../../lib/db";
 import {
   deleteRoomMembersFromRedis,
@@ -30,7 +31,7 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
             data: {
               player1Id: null,
               player2Id: null,
-              status: "aborted",
+              status: room.player2Id === userId ? "waiting" : "aborted",
               winnerId: null,
               loserId: null,
             },
@@ -45,7 +46,7 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
           await deleteRoomMembersFromRedis(roomId);
 
           responder.success("left-room", {
-            roomStatus: "aborted",
+            roomStatus: room.player2Id === userId ? "waiting" : "aborted",
             username: user.username,
           });
 
@@ -54,7 +55,8 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
             username: user.username,
             isRoomCreatorLeft: room.player1Id === userId,
             isPlayerLeft: room.player2Id === userId || room.player1Id === userId,
-            roomStatus: "aborted",
+            isPlayer2Left: room.player2Id === userId,
+            roomStatus: room.player2Id === userId ? "waiting" : "aborted",
           });
 
           return;

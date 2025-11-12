@@ -78,7 +78,6 @@ export function GameRoom() {
   };
 
   useSocketEvent("joined-room", (res) => {
-    console.log(res, "user-joiend redirect him");
     setIsJoining(false);
     toast.success(`You have joined room as a ${res.role} successfully.`);
     // LocalStorageSetItem("GameState",);
@@ -91,10 +90,12 @@ export function GameRoom() {
 
   useSocketEvent("error", (res) => {
     toast.success(res.message || "An error occurred while joining the room.");
+    setIsJoining(false);
   });
 
   useSocketEvent("room-full", (res) => {
     toast.error(res.message || "This room is full. Please try another one.");
+    setIsJoining(false);
   });
 
   return (

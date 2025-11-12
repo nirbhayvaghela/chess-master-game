@@ -195,14 +195,14 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
-              <Button
+              {/* <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate(routes.dashboard)}
                 className="hover:bg-secondary"
               >
                 <ArrowLeft className="h-5 w-5" />
-              </Button>
+              </Button> */}
               <div>
                 <h1 className="text-2xl font-bold text-primary">
                   {isGameStarting

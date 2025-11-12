@@ -76,7 +76,7 @@ export function GameRoom() {
     socket.emit("join-room", { code: joinCode, userId: userData.id });
     setIsJoining(true);
   };
-
+    
   useSocketEvent("joined-room", (res) => {
     setIsJoining(false);
     toast.success(`You have joined room as a ${res.role} successfully.`);

@@ -1,18 +1,14 @@
-import React from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import {
   ChevronDown,
   User,
-  Settings,
   LogOut,
-  Trophy,
   Gamepad2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -22,16 +18,6 @@ import { LocalStorageGetItem, LocalStorageRemoveItem } from "@/utils/helpers/sto
 export const NavBar = () => {
   const navigate = useNavigate();
   const userData = LocalStorageGetItem("userData");
-
-  const userStats = {
-    username: "KnightMaster42",
-    currentStreak: 3,
-    gamesPlayed: 28,
-    wins: 16,
-    losses: 12,
-    lastMatch: "ChessGuru91",
-    lastResult: "WIN",
-  };
 
   const handleLogout = () => {
     LocalStorageRemoveItem("userData");
@@ -144,7 +130,7 @@ export const NavBar = () => {
         </div>
 
         {/* Mobile Stats */}
-        <div className="md:hidden mt-3 flex items-center justify-between text-xs text-secondary-foreground">
+        {/* <div className="md:hidden mt-3 flex items-center justify-between text-xs text-secondary-foreground">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
               <div className="text-orange-500">🔥</div>
@@ -160,7 +146,7 @@ export const NavBar = () => {
               {userStats.lastResult}
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

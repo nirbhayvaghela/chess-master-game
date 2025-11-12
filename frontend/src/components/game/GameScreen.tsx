@@ -24,10 +24,7 @@ const getGameStatusBadge = (gameStatus: string) => {
   switch (gameStatus) {
     case "waiting":
       return (
-        <Badge
-          variant="secondary"
-          className="bg-yellow-500/10 text-yellow-600"
-        >
+        <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600">
           Waiting for Players
         </Badge>
       );
@@ -35,10 +32,7 @@ const getGameStatusBadge = (gameStatus: string) => {
     case "in_progress":
     case "playing":
       return (
-        <Badge
-          variant="secondary"
-          className="bg-green-500/10 text-green-600"
-        >
+        <Badge variant="secondary" className="bg-green-500/10 text-green-600">
           Game in Progress
         </Badge>
       );
@@ -55,50 +49,35 @@ const getGameStatusBadge = (gameStatus: string) => {
 
     case "lose":
       return (
-        <Badge
-          variant="secondary"
-          className="bg-red-500/10 text-red-600"
-        >
+        <Badge variant="secondary" className="bg-red-500/10 text-red-600">
           You Lost 😔
         </Badge>
       );
 
     case "draw":
       return (
-        <Badge
-          variant="secondary"
-          className="bg-gray-500/10 text-gray-600"
-        >
+        <Badge variant="secondary" className="bg-gray-500/10 text-gray-600">
           Draw
         </Badge>
       );
 
     case "stalemate":
       return (
-        <Badge
-          variant="secondary"
-          className="bg-purple-500/10 text-purple-600"
-        >
+        <Badge variant="secondary" className="bg-purple-500/10 text-purple-600">
           Stalemate
         </Badge>
       );
 
     case "completed":
       return (
-        <Badge
-          variant="secondary"
-          className="bg-blue-500/10 text-blue-600"
-        >
+        <Badge variant="secondary" className="bg-blue-500/10 text-blue-600">
           Game Completed
         </Badge>
       );
 
     case "aborted":
       return (
-        <Badge
-          variant="destructive"
-          className="bg-red-500/10 text-red-600"
-        >
+        <Badge variant="destructive" className="bg-red-500/10 text-red-600">
           Game Aborted
         </Badge>
       );
@@ -111,7 +90,6 @@ const getGameStatusBadge = (gameStatus: string) => {
       );
   }
 };
-
 
 export function GameScreen() {
   const navigate = useNavigate();
@@ -258,16 +236,16 @@ export function GameScreen() {
 
   return (
     <>
-      <div className="min-h-screen bg-background p-4">
-        <div className="max-w-7xl mx-auto space-y-4">
+      <div className="min-h-screen bg-background p-2 sm:p-4">
+        <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="space-y-2">
-                <h1 className="text-2xl font-bold">
+          <div className="flex items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-start gap-2 sm:gap-4">
+              <div className="space-y-2 flex-1">
+                <h1 className="text-xl sm:text-2xl font-bold break-words">
                   Room Name: {data?.roomName}
                 </h1>
-                <div className="flex items-center gap-2 text-sm mt-1">
+                <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
                   <span className="text-muted-foreground">Room code:</span>
                   <span className="font-semibold text-white">
                     {data?.roomCode}
@@ -289,17 +267,17 @@ export function GameScreen() {
                     )}
                   </button>
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <span>
+                <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                  <span className="break-all">
                     {data?.player1?.username} vs {data?.player2?.username}
                   </span>
                   {playerColor && (
-                    <Badge variant="outline" className="ml-2">
+                    <Badge variant="outline" className="text-xs">
                       You: {playerColor}
                     </Badge>
                   )}
                   {isSpectator && (
-                    <Badge variant="outline" className="ml-2">
+                    <Badge variant="outline" className="text-xs">
                       Spectator
                     </Badge>
                   )}
@@ -307,33 +285,27 @@ export function GameScreen() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end sm:self-auto">
               {getGameStatusBadge(gameStatus)}
-              {/* <Button variant="outline" size="icon">
-                <Settings className="h-4 w-4" />
-              </Button>
-              {isPlayer && (
-                <Button variant="outline" size="icon">
-                  <Flag className="h-4 w-4" />
-                </Button>
-              )} */}
               <Button
                 variant="destructive"
-                className="flex items-center gap-2"
+                size="sm"
+                className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
                 onClick={() => setIsOpenConfirmDialog(true)}
               >
-                <X className="h-4 w-4" />
-                Leave Room
+                <X className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden xs:inline">Leave Room</span>
+                <span className="xs:hidden">Leave</span>
               </Button>
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Main Game Area */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               {/* Chess Board */}
               <Card className="border-border">
-                <CardContent className="p-6">
+                <CardContent className="p-2 sm:p-4 md:p-6">
                   <div className="flex justify-center">
                     <div className="w-full max-w-2xl">
                       <ChessBoard
@@ -346,20 +318,20 @@ export function GameScreen() {
               </Card>
 
               {/* Game Controls */}
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <MoveHistory />
                 <CapturedPieces />
               </div>
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4 order-last">
               <SpectatorList
                 roomDetails={data}
                 roomSpcatators={data?.spectators}
                 isPlayer={isPlayer}
               />
-              <div className="h-96">
+              <div className="h-64 sm:h-80 lg:h-96">
                 <ChatPanel roomDetails={data} />
               </div>
             </div>

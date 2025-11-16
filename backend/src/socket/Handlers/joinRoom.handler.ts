@@ -37,23 +37,26 @@ export const joinRoomHandler = (io: any, socket: any) => {
       if (room.player1Id === user.id || room.player2Id === user.id) {
         // Rejoining existing player
         role = "player";
-      } else if (!room.player2Id) {
+      } else if (!room.player1Id) {
         // Joining as player 2
         updatedRoom = await db.gameRoom.update({
           where: { id: room.id },
           data: {
+            player1Id: user.id,
+            status: "waiting",
+          },
+        });
+        role = "player";
+      } else if (!room.player2Id) {
+        // Joining as player 2
+        updatedRoom = await db.gameRoom.update({
+          where: { id: room.id },
+          data: { 
             player2Id: user.id,
             status: "in_progress",
           },
         });
-        role = "player";
-
-        // setTimeout(async () => {
-        //   SocketResponder.toRoom(io, updatedRoom.id, "game-started", {
-        //     roomStatus: updatedRoom.status,
-        //     player2: user,
-        //   });
-        // }, 20000);
+        role = "player";  
       } else {
         // Joining as spectator
         await db.user.update({

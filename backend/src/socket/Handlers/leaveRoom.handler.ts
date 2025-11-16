@@ -25,14 +25,47 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
 
       await db.$transaction(async (tx) => {
         const isSpectator = user.spectatingRoomId === roomId;
-        // Case 1: Game was waiting or in progress
-        if (!isSpectator && (room.status === "waiting" || room.status === "in_progress")) {
+        if (
+          room.status === "waiting" &&
+          room.player1Id !== userId &&
+          room.player2Id !== userId
+        )
+          return responder.error("error", "You are not part of this room.");
+
+        if (room.player1Id === userId && room.status === "waiting") {
           await tx.gameRoom.update({
             where: { id: room.id },
             data: {
               player1Id: null,
               player2Id: null,
-              status: room.player2Id === userId ? "waiting" : "aborted",
+              status: "waiting",
+            },
+          });
+
+          await tx.user.update({
+            where: { id: userId },
+            data: { inRoom: false },
+          });
+
+          socket.leave(`room:${roomId}`);
+          await deleteRoomMembersFromRedis(roomId);
+
+          responder.success("left-room", {
+            roomStatus: "waiting",
+            username: user.username,
+          });
+
+          return;
+        }
+        
+        // Case 1: Game was waiting or in progress
+        if (!isSpectator && room.status === "in_progress") {
+          await tx.gameRoom.update({
+            where: { id: room.id },
+            data: {
+              player1Id: null,
+              player2Id: null,
+              status: "aborted",
               winnerId: null,
               loserId: null,
             },
@@ -47,7 +80,7 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
           await deleteRoomMembersFromRedis(roomId);
 
           responder.success("left-room", {
-            roomStatus: room.player2Id === userId ? "waiting" : "aborted",
+            roomStatus: "aborted",
             username: user.username,
           });
 
@@ -55,9 +88,10 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
             userId,
             username: user.username,
             isRoomCreatorLeft: room.player1Id === userId,
-            isPlayerLeft: room.player2Id === userId || room.player1Id === userId,
+            isPlayerLeft:
+              room.player2Id === userId || room.player1Id === userId,
             isPlayer2Left: room.player2Id === userId,
-            roomStatus: room.player2Id === userId ? "waiting" : "aborted",
+            roomStatus: "aborted",
           });
 
           return;

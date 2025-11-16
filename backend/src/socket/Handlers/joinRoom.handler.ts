@@ -25,6 +25,10 @@ export const joinRoomHandler = (io: any, socket: any) => {
         },
       });
       if (!room) return responder.error("error", "Room not found.");
+      const socketsInRoom = await io.in(`room:${room.id}`).fetchSockets();
+      if (socketsInRoom.length >= 15) {
+        return responder.error("room-full", "Room is full.");
+      }
 
       // --- Determine join role ---
       let role: "player" | "spectator" = "spectator";
@@ -39,7 +43,7 @@ export const joinRoomHandler = (io: any, socket: any) => {
           where: { id: room.id },
           data: {
             player2Id: user.id,
-            status: "waiting",
+            status: "in_progress",
           },
         });
         role = "player";
@@ -62,12 +66,6 @@ export const joinRoomHandler = (io: any, socket: any) => {
         updatedRoom = (await db.gameRoom.findUnique({
           where: { id: room.id },
         })) as GameRoom;
-      }
-
-      // --- Check for max connections ---
-      const socketsInRoom = await io.in(`room:${room.id}`).fetchSockets();
-      if (socketsInRoom.length >= 15) {
-        return responder.error("room-full", "Room is full.");
       }
 
       // --- Join the socket room ---

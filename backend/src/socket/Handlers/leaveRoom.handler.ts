@@ -24,8 +24,9 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
       }
 
       await db.$transaction(async (tx) => {
+        const isSpectator = user.spectatingRoomId === roomId;
         // Case 1: Game was waiting or in progress
-        if (room.status === "waiting" || room.status === "in_progress") {
+        if (!isSpectator && (room.status === "waiting" || room.status === "in_progress")) {
           await tx.gameRoom.update({
             where: { id: room.id },
             data: {
@@ -63,7 +64,7 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
         }
 
         // Case 2: Game was playing
-        if (room.status === "playing") {
+        if (room.status === "playing" && !isSpectator) {
           const winnerId =
             room.player1Id === userId ? room.player2Id : room.player1Id;
           const loserId =
@@ -110,7 +111,7 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
         }
 
         // Case 3: User is spectator
-        if (user.spectatingRoomId === roomId) {
+        if (isSpectator) {
           await tx.user.update({
             where: { id: userId },
             data: {

@@ -325,7 +325,7 @@ export function GameScreen() {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-3 sm:space-y-4 order-last">
+            <div className="space-y-3 sm:space-y-4">
               <SpectatorList
                 roomDetails={data}
                 roomSpcatators={data?.spectators}

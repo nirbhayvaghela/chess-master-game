@@ -123,8 +123,8 @@ export function SpectatorList({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <ScrollArea className="h-48 px-4">
-          <div className="space-y-2">
+        <ScrollArea className="h-48 px-4" >
+          <div className="space-y-2 [overflow-anchor:none]">
             {spectatorList.map((spectator) => (
               <div
                 key={spectator.id}

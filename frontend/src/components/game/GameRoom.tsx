@@ -15,7 +15,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCreateGameRoom } from "@/hooks/queries/useGameRoom";
 import { routes } from "@/utils/constants/routes";
 import socket from "@/lib/socket";
-import { LocalStorageGetItem, LocalStorageSetItem } from "@/utils/helpers/storageHelper";
+import { LocalStorageGetItem } from "@/utils/helpers/storageHelper";
 import { toast } from "sonner";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
 

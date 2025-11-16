@@ -158,6 +158,7 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
       navigate(routes.dashboard);
       return;
     }
+    console.log(isGameStarting, status, "check")
     if ((!isGameStarting && status === "in_progress") || status === "playing") {
       navigate(routes.game(Number(gameId)));
       return;

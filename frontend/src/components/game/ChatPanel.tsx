@@ -55,7 +55,7 @@ export function ChatPanel({ roomDetails }: { roomDetails: any }) {
       </CardHeader>
 
       <CardContent className="h-[30vh] flex-1 flex flex-col p-0">
-        <ScrollArea className="flex-1 px-4">
+        <ScrollArea className="flex-1 px-4 [overflow-anchor:none]">
           <div className="space-y-2 pb-4">
             {messages.map((msg, index) => {
               const { sender, message, timestamp } = msg;

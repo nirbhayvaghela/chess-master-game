@@ -57,7 +57,7 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
 
           return;
         }
-        
+
         // Case 1: Game was waiting or in progress
         if (!isSpectator && room.status === "in_progress") {
           await tx.gameRoom.update({
@@ -142,6 +142,42 @@ export const LeaveRoomHandler = (io: any, socket: any) => {
           });
 
           return;
+        }
+
+        if (!isSpectator && room.status === "completed") {
+          await tx.gameRoom.update({
+            where: { id: room.id },
+            data: {
+              player1Id: null,
+              player2Id: null,
+              status: "closed",
+              winnerId: null,
+              loserId: null,
+            },
+          });
+
+          await tx.user.update({
+            where: { id: userId },
+            data: { inRoom: false },
+          });
+
+          socket.leave(`room:${roomId}`);
+          await deleteRoomMembersFromRedis(roomId);
+
+          responder.success("left-room", {
+            roomStatus: "closed",
+            username: user.username,
+          });
+
+          SocketResponder.toRoom(io, roomId, "user-left", {
+            userId,
+            username: user.username,
+            isRoomCreatorLeft: room.player1Id === userId,
+            isPlayerLeft:
+              room.player2Id === userId || room.player1Id === userId,
+            isPlayer2Left: room.player2Id === userId,
+            roomStatus: "closed",
+          });
         }
 
         // Case 3: User is spectator

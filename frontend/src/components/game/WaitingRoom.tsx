@@ -40,8 +40,8 @@ interface WaitingRoomProps {
 const WaitingRoom: React.FC<WaitingRoomProps> = () => {
   const { gameId } = useParams();
   const userData = LocalStorageGetItem("userData");
-  const { data: roomDetails, isLoading } = useGetGameRoomDetails(
-    Number(gameId)
+  const { data: roomDetails, isLoading, refetch } = useGetGameRoomDetails(
+    Number(gameId),
   );
   const [isLeaving, setIsLeaving] = useState(false);
   const [isOpenConfirmDialog, setIsOpenConfirmDialog] = useState(false);
@@ -83,6 +83,7 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
   // join Game events
   useSocketEvent("game-start", (res: any) => {
     console.log("Game starting:", res);
+    refetch();
     setIsPlayer2Joined(true);
     setIsGameStarting(true);
     setGameStartCountdown(15);
@@ -99,7 +100,6 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
 
   // leave player-2 when player1(creator) left
   useSocketEvent("user-left", (res) => {
-    console.log(res, "user-left event");
     toast.success(`Game is ${res.roomStatus}, ${res.username} left the room.`);
     socket.disconnect();
     if (res.isRoomCreatorLeft) {
@@ -109,6 +109,7 @@ const WaitingRoom: React.FC<WaitingRoomProps> = () => {
       setIsPlayer2Joined(false);
       setIsGameStarting(false);
       setGameStartCountdown(0);
+      navigate(routes.dashboard);
     }
   });
 

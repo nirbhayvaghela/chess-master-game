@@ -27,8 +27,10 @@ export function ChessBoard({
   className,
 }: ChessBoardProp) {
   const gameRef = useRef(new Chess());
+
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [boardWidth, setBoardWidth] = useState<number>(360); // sensible default for small screens
+  const [gameOverReason, setGameOverReason] = useState<string | undefined>();
+  const [boardWidth, setBoardWidth] = useState<number>(360);
   const { fen, setFen, moveHistory, addMove } = useChessGameStore();
   const isPlayer1 = currentUserId === roomDetails?.player1Id;
   const isPlayer2 = currentUserId === roomDetails?.player2Id;
@@ -45,6 +47,16 @@ export function ChessBoard({
     Record<string, React.CSSProperties>
   >({});
 
+  // Promotion states
+  const [pendingPromotion, setPendingPromotion] = useState<{
+    from: Square;
+    to: Square;
+  } | null>(null);
+  const [showPromotionDialog, setShowPromotionDialog] = useState(false);
+  const [promotionToSquare, setPromotionToSquare] = useState<Square | null>(
+    null
+  );
+
   const {
     status,
     isMyTurn,
@@ -57,6 +69,20 @@ export function ChessBoard({
     isPlayer2,
     pieceUnicodeMap,
   });
+
+  // ---------------------
+  // Helper to check if move is a promotion
+  // ---------------------
+  const isPromotion = (from: Square, to: Square): boolean => {
+    const piece = gameRef.current.get(from);
+    if (!piece || piece.type !== "p") return false;
+
+    const toRank = to[1];
+    return (
+      (piece.color === "w" && toRank === "8") ||
+      (piece.color === "b" && toRank === "1")
+    );
+  };
 
   // ---------------------
   // Highlight helpers
@@ -108,22 +134,75 @@ export function ChessBoard({
       highlightSquares(moves, square);
     } else if (selectedSquare) {
       if (possibleMoves.includes(square)) {
-        // makeMove emits to socket
-        makeMove(selectedSquare, square);
+        // Check if this is a promotion move
+        if (isPromotion(selectedSquare, square)) {
+          setPendingPromotion({ from: selectedSquare, to: square });
+          setPromotionToSquare(square);
+          setShowPromotionDialog(true);
+        } else {
+          makeMove(selectedSquare, square);
+        }
       } else {
         clearHighlights();
       }
     }
   };
 
-  const makeMove = (from: Square, to: Square) => {
-    // Single emit of the move
-    socket.emit("move", {
+  const makeMove = (from: Square, to: Square, promotion?: string) => {
+    const moveData: any = {
       gameId: roomDetails.id,
       move: { from, to },
-    });
+    };
 
+    if (promotion) {
+      moveData.move.promotion = promotion;
+    }
+    console.log(moveData, "moveData");
+    socket.emit("move", moveData);
     clearHighlights();
+  };
+
+  // Adapted to match react-chessboard's expected signature:
+  // (piece?: PromotionPieceOption, promoteFromSquare?: Square, promoteToSquare?: Square) => boolean
+  const handlePromotion = (
+    piece?: any,
+    promoteFromSquare?: Square,
+    promoteToSquare?: Square
+  ): boolean => {
+    const from = promoteFromSquare ?? pendingPromotion?.from;
+    const to = promoteToSquare ?? pendingPromotion?.to;
+
+    if (!from || !to) return false;
+
+    // piece can come in different shapes depending on the chessboard implementation.
+    // Normalize to a single lowercase letter representing the piece (q, r, b, n).
+    let promotionPiece = "q";
+    if (piece) {
+      if (typeof piece === "string") {
+        promotionPiece = piece.slice(-1).toLowerCase();
+      } else if (typeof piece === "object") {
+        // try common fields
+        promotionPiece = (piece.key || piece.id || String(Object.values(piece)[0] || "q")).toString().slice(-1).toLowerCase();
+      }
+    }
+
+    makeMove(from, to, promotionPiece);
+
+    // Clear promotion state
+    setPendingPromotion(null);
+    setShowPromotionDialog(false);
+    setPromotionToSquare(null);
+
+    return true;
+  };
+
+  // This callback is used by react-chessboard to determine if promotion dialog should show
+  const onPromotionCheck = (
+    sourceSquare: Square,
+    targetSquare: Square,
+    piece: string
+  ) => {
+    return isPromotion(sourceSquare, targetSquare);
   };
 
   const onDrop = (sourceSquare: string, targetSquare: string) => {
@@ -134,15 +213,25 @@ export function ChessBoard({
       return false;
     }
 
-    const possible = getPossibleMoves(sourceSquare as Square);
-    if (!possible.includes(targetSquare as Square)) {
+    const source = sourceSquare as Square;
+    const target = targetSquare as Square;
+
+    const possible = getPossibleMoves(source);
+    if (!possible.includes(target)) {
       toast.error("Invalid move!");
       return false;
     }
 
-    // call makeMove (this will emit once)
-    makeMove(sourceSquare as Square, targetSquare as Square);
+    // Check if this is a promotion move
+    if (isPromotion(source, target)) {
+      setPendingPromotion({ from: source, to: target });
+      setPromotionToSquare(target);
+      setShowPromotionDialog(true);
+      return true; // Allow the drag, promotion dialog will handle the rest
+    }
 
+    // Regular move
+    makeMove(source, target);
     return true;
   };
 
@@ -190,6 +279,14 @@ export function ChessBoard({
     }
   });
 
+  // useSocketEvent("game-over", (res) => {
+  //   if (res.status === "completed") {
+  //     setGameOverReason("Checkmate! " + res.winner + " wins.");
+  //   } else if (res.status === "draw") {
+  //     setGameOverReason("Game ended in a draw, becuae of " + res.gameOverReason + ".");
+  //   }
+  // });
+
   useSocketEvent("error", (res) => {
     toast.error(res.message || "An error occurred");
   });
@@ -217,15 +314,13 @@ export function ChessBoard({
 
     let raf = 0;
     const readWidthAndSet = () => {
-      // measure width and leave small margin (16px) so board never touches viewport edges
       const rect = el.getBoundingClientRect();
       const margin = 16;
-      const available = Math.max(120, rect.width - margin); // minimum 120px
+      const available = Math.max(120, rect.width - margin);
       setBoardWidth(Math.floor(available));
     };
 
     const observer = new ResizeObserver(() => {
-      // throttle via rAF
       if (raf) cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         readWidthAndSet();
@@ -233,7 +328,6 @@ export function ChessBoard({
       });
     });
 
-    // initial read
     readWidthAndSet();
     observer.observe(el);
 
@@ -264,7 +358,7 @@ export function ChessBoard({
         )}
       </div>
 
-      {/* Responsive container: full width but capped to 500px */}
+      {/* Responsive container */}
       <div ref={containerRef} className="w-full max-w-[500px]">
         <Chessboard
           position={fen}
@@ -277,6 +371,11 @@ export function ChessBoard({
           boardOrientation={boardOrientation}
           customSquareStyles={squareStyles}
           arePiecesDraggable={isMyTurn()}
+          // Promotion props
+          showPromotionDialog={showPromotionDialog}
+          promotionToSquare={promotionToSquare}
+          onPromotionCheck={onPromotionCheck}
+          onPromotionPieceSelect={handlePromotion}
           customBoardStyle={{
             borderRadius: "4px",
             boxShadow: "0 2px 10px rgba(0, 0, 0, 0.5)",
@@ -290,12 +389,15 @@ export function ChessBoard({
         />
       </div>
 
-      <p className="w-full text-lg text-center font-semibold">{status}</p>
+      <p className="w-full text-lg text-center font-semibold">
+        {status}
+      </p>
 
       {/* Debug info - remove in production */}
       {selectedSquare && (
         <div className="text-xs text-gray-400">
-          Selected: {selectedSquare} | Possible moves: {possibleMoves.join(", ")}
+          Selected: {selectedSquare} | Possible moves:{" "}
+          {possibleMoves.join(", ")}
         </div>
       )}
     </div>

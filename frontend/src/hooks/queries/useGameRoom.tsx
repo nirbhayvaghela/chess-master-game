@@ -1,5 +1,8 @@
 import { CreateGameRoomSchemaType } from "@/schemas/game-room.schema";
-import { createGameRoom, getGameRoomDetails } from "@/services/game-room.sevice";
+import {
+  createGameRoom,
+  getGameRoomDetails,
+} from "@/services/game-room.sevice";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 export const useCreateGameRoom = () => {
@@ -21,6 +24,6 @@ export const useGetGameRoomDetails = (id: number) => {
       return res.data.data.room;
     },
     enabled: !!id, // Only run this query if id is defined
-  })
+  });
   return response;
-}
+};

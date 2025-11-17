@@ -64,12 +64,12 @@ export const useGameHandlers = ({
           [...capturedPieces.white, move],
           capturedPieces.black
         );
+      } else {
+        updateCapturedPiecesToStore(capturedPieces.white, [
+          ...capturedPieces.black,
+          move,
+        ]);
       }
-    } else {
-      updateCapturedPiecesToStore(capturedPieces.white, [
-        ...capturedPieces.black,
-        move,
-      ]);
     }
   };
 

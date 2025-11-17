@@ -21,10 +21,12 @@ export const joinRoomHandler = (io: any, socket: any) => {
       const room = await db.gameRoom.findUnique({
         where: {
           roomCode: code,
-          status: { notIn: ["completed", "aborted"] },
+          status: { not: "aborted" },
         },
       });
+
       if (!room) return responder.error("error", "Room not found.");
+
       const socketsInRoom = await io.in(`room:${room.id}`).fetchSockets();
       if (socketsInRoom.length >= 15) {
         return responder.error("room-full", "Room is full.");
@@ -51,12 +53,12 @@ export const joinRoomHandler = (io: any, socket: any) => {
         // Joining as player 2
         updatedRoom = await db.gameRoom.update({
           where: { id: room.id },
-          data: { 
+          data: {
             player2Id: user.id,
             status: "in_progress",
           },
         });
-        role = "player";  
+        role = "player";
       } else {
         // Joining as spectator
         await db.user.update({

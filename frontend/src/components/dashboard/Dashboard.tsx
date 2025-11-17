@@ -8,7 +8,6 @@ import Loader from "../ui/loader";
 export function DashboardCard() {
   const userData = LocalStorageGetItem("userData");
   const { data: dashboardData, isLoading } = useGetDashboardDetails();
-  if (isLoading) return <Loader />;
 
   return (
     <Card className="mx-auto max-w-5xl bg-background border border-border rounded-xl shadow-lg">
@@ -24,19 +23,19 @@ export function DashboardCard() {
         </div> */}
         <div className="space-y-1">
           <p className="text-muted-foreground">Games Played</p>
-          <p className="text-lg font-bold">{dashboardData?.gamesPlayed}</p>
+          <p className="text-lg font-bold">{dashboardData?.gamesPlayed ?? 0}</p>
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground">Wins</p>
-          <p className="text-lg font-bold text-green-400">{dashboardData?.gamesWon}</p>
+          <p className="text-lg font-bold text-green-400">{dashboardData?.gamesWon ?? 0 }</p>
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground">Losses</p>
-          <p className="text-lg font-bold text-red-400">{dashboardData?.gamesLoose}</p>
+          <p className="text-lg font-bold text-red-400">{dashboardData?.gamesLoose ?? 0}</p>
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground">Last Match vs</p>
-          <p className="text-lg font-bold">{dashboardData?.lastMatchWithDetails?.username}</p>
+          <p className="text-lg font-bold">{dashboardData?.lastMatchWithDetails?.username ?? '-'}</p>
         </div>
         <div className="space-y-1">
           <p className="text-muted-foreground">Result</p>
@@ -49,7 +48,7 @@ export function DashboardCard() {
                 : "text-yellow-300"
             }`}
           >
-            {dashboardData?.lastMatchWithDetails?.result}
+            {dashboardData?.lastMatchWithDetails?.result ?? '-'}
           </p>
         </div>
       </CardContent>

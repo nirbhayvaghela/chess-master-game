@@ -4,9 +4,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
-
 import socketHandler from "./socket";
-
 import authRouter from "./routes/auth.route";
 import gameRoomRouter from "./routes/game-room.route";
 import dashboardRouter from "./routes/dashboard.route";
